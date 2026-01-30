@@ -5,32 +5,30 @@ body {
   min-height: 100vh;
   display: flex;
 }
+/* Left side image */
+.left-panel {
+  width: 50%;
+  background-image: url("../images/school.jpeg");
+  background-size: cover;
+  background-position: center;
+}
 
+/* Right side content */
+.right-panel {
+  width: 50%;
+  background: #f4f6fb; /* soft light blue/grey */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-/* Make container readable */
+/* Box inside right side */
 .container {
-  background: rgba(0, 0, 0, 0.7); /* dark transparent */
-  color: white;
+  background: white;
+  padding: 30px;
+  width: 80%;
+  max-width: 420px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
   text-align: center;
 }
-
-/* Make headings bright */
-h1 {
-  color: #ffffff;
-}
-
-/* Make list text white */
-ul li {
-  color: #ffffff;
-}
-
-/* Warning text */
-.warning {
-  color: #ffcccb;
-}
-
-/* Note text */
-.note {
-  color: #dddddd;
-}
-
