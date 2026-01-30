@@ -1,11 +1,33 @@
+/* Center container on page */
 body {
-  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  background-image: url("../images/school.jpeg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+/* Make container readable */
+.container {
+  background: rgba(0, 0, 0, 0.7); /* dark transparent */
+  color: white;
+  text-align: center;
+}
 
-  min-height: 100vh;
-  margin: 0;
+/* Make headings bright */
+h1 {
+  color: #ffffff;
+}
+
+/* Make list text white */
+ul li {
+  color: #ffffff;
+}
+
+/* Warning text */
+.warning {
+  color: #ffcccb;
+}
+
+/* Note text */
+.note {
+  color: #dddddd;
 }
