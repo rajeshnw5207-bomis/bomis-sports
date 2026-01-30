@@ -1,9 +1,11 @@
 /* Center container on page */
 body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
 }
+
 
 /* Make container readable */
 .container {
@@ -31,3 +33,4 @@ ul li {
 .note {
   color: #dddddd;
 }
+
