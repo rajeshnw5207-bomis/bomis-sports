@@ -1,43 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>BOMIS Student Login</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="login-container">
-        <div class="image-section" style="background-image: url('images/school.jpeg');"></div>
+let generatedOtp = null;
+let userClassFromServer = null;
 
-        <div class="form-section">
-            <h1>Welcome to <span class="brand-orange">BOMIS</span> Sports Selection</h1>
-            
-            <div class="input-group">
-                <label>Enrollment Number</label>
-                <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No.">
-                <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
-            </div>
+// 1. Verify Enrollment Number
+async function verifyEnrollment() {
+    const enrollNo = document.getElementById('enrollmentNo').value;
+    const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
+    const data = await response.json();
 
-            <div id="stepTwoArea" class="locked-section" style="opacity: 0.5; pointer-events: none;">
-                <div class="input-group">
-                    <label>Email ID</label>
-                    <input type="email" id="email" placeholder="Enter Registered Email">
-                </div>
-                <button id="btnProceed" class="btn" onclick="sendOtp()" disabled>Proceed</button>
-                
-                <div id="otpSection" style="display: none; margin-top: 15px;">
-                    <div class="input-group">
-                        <label>Enter OTP</label>
-                        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
-                        <button class="btn" onclick="verifyOtp()">Verify & Proceed</button>
-                    </div>
-                </div>
-            </div>
+    if (data.verified) {
+        document.getElementById('stepTwoArea').style.opacity = "1";
+        document.getElementById('stepTwoArea').style.pointerEvents = "auto";
+        document.getElementById('btnProceed').disabled = false;
+        document.getElementById('statusMessage').innerText = "Enrollment Verified! Please enter email.";
+    } else {
+        alert("Enrollment Number not found.");
+    }
+}
 
-            <div id="statusMessage" class="status-box"></div>
-        </div>
-    </div>
+// 2. Send OTP to Email
+async function sendOtp() {
+    const enrollNo = document.getElementById('enrollmentNo').value;
+    const email = document.getElementById('email').value;
 
-    <script src="js/app.js"></script> 
-</body>
-</html>
+    const response = await fetch('http://localhost:3000/api/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollNo, email })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        generatedOtp = data.otp; // Store OTP from server
+        userClassFromServer = data.studentClass; // Store class (e.g., 4 or 8)
+        document.getElementById('otpSection').style.display = "block";
+        alert("OTP sent to your email!");
+    } else {
+        alert(data.message);
+    }
+}
+
+// 3. THE FUNCTION YOU NEED: Verify OTP and Redirect
+function verifyOtp() {
+    const userEnteredOtp = document.getElementById('otpInput').value;
+    
+    if (userEnteredOtp == generatedOtp && generatedOtp !== null) {
+        alert("Verification Successful!");
+        
+        // Save the class so games.html knows which sports to show
+        localStorage.setItem('userClass', userClassFromServer);
+        
+        // Go to the selection page
+        window.location.href = 'games.html';
+    } else {
+        alert("Incorrect OTP. Please check your email.");
+    }
+}
