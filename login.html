@@ -1,31 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Student Login</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <title>BOMIS Student Login</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="login-container">
+        <div class="image-section" style="background-image: url('images/school pic.jpeg');"></div>
 
-  <div class="container">
+        <div class="form-section">
+            <h1>Welcome to <span class="brand-orange">BOMIS</span> Sports Selection</h1>
+            
+            <div class="input-group">
+                <label>Enrollment Number</label>
+                <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No." oninput="resetStepTwo()">
+                <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
+            </div>
 
-    <h1>Student Login</h1>
+            <div id="stepTwoArea" class="locked-section">
+                <div class="input-group">
+                    <label>Email ID</label>
+                    <input type="email" id="email" placeholder="Enter Registered Email">
+                </div>
+                <button id="btnProceed" class="btn" onclick="sendOTP()" disabled>Proceed</button>
+            </div>
 
-    <label>Enrollment Number</label>
-    <input type="text" placeholder="Enter Enrollment Number">
-
-    <label>Email ID</label>
-    <input type="email" placeholder="Enter Email ID">
-
-    <button class="btn" onclick="location.href='otp.html'">
-      Get OTP
-    </button>
-
-    <p class="note">
-      OTP will be sent to registered email only.
-    </p>
-
-  </div>
-
+            <div id="statusMessage" class="status-box"></div>
+        </div>
+    </div>
 </body>
 </html>
