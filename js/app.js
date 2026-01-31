@@ -10,7 +10,7 @@ async function verifyEnrollment() {
     if (!enrollNo) return alert("Please enter Enrollment Number");
 
     try {
-        // Change the URL below to match your CURRENT ngrok URL
+        // Change the URL below to match your CURRENT ngrok URL if it changes
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
             headers: { "ngrok-skip-browser-warning": "true" }
         });
@@ -60,7 +60,7 @@ async function sendOtp() {
             console.log("OTP IS:", generatedOtp);
             document.getElementById('otpSection').style.display = "block";
             
-            let timeLeft = 120; // 2 Minutes
+            let timeLeft = 120; // 2 Minutes (120 seconds)
             clearInterval(otpTimer);
             otpTimer = setInterval(() => {
                 timeLeft--;
