@@ -1,3 +1,13 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    height: 100%;
+    width: 100%;
+}
 /* Layout */
 .login-container { display: flex; height: 100vh; font-family: sans-serif; }
 
@@ -37,3 +47,4 @@ input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6p
 /* Locking Logic Styling */
 .locked-section { opacity: 0.3; pointer-events: none; transition: 0.3s; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
 .status-box { margin-top: 20px; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
+
