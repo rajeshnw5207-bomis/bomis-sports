@@ -21,7 +21,7 @@
                     <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
                 </div>
 
-                <div id="stepTwoArea" style="opacity: 0.5; pointer-events: none; transition: 0.3s;">
+                <div id="stepTwoArea" style="opacity: 0.5; pointer-events: none;">
                     <div class="input-group">
                         <label>Email ID</label>
                         <input type="email" id="email" placeholder="Enter Registered Email">
@@ -32,16 +32,15 @@
                         <div class="input-group">
                             <label>Enter OTP</label>
                             <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
-                            <button class="btn verify-btn" onclick="verifyOtp()">Verify & Proceed</button>
+                            <button class="btn" onclick="verifyOtp()">Verify & Proceed</button>
                         </div>
                     </div>
                 </div>
-
                 <div id="statusMessage" class="status-box"></div>
             </div>
         </div>
     </div>
-
+</body>
     <script>
         let generatedOtp = null;
         let userClassFromServer = null;
@@ -101,3 +100,4 @@
     </script>
 </body>
 </html>
+
