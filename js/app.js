@@ -5,12 +5,11 @@ async function verifyEnrollment() {
     const enrollNo = document.getElementById('enrollmentNo').value;
     const msg = document.getElementById('statusMessage');
     const stepTwo = document.getElementById('stepTwoArea');
-    const btnProceed = document.getElementById('btnProceed');
 
     if (!enrollNo) return alert("Please enter Enrollment Number");
 
     try {
-        // Change the URL below to match your CURRENT ngrok URL if it changes
+        // !!! IMPORTANT: Ensure this URL matches your current ngrok address !!!
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
             headers: { "ngrok-skip-browser-warning": "true" }
         });
@@ -21,16 +20,15 @@ async function verifyEnrollment() {
             msg.innerHTML = "Enrollment Verified!";
             stepTwo.style.opacity = "1";
             stepTwo.style.pointerEvents = "all";
-            btnProceed.disabled = false;
         } else {
             msg.style.color = "red";
             msg.innerHTML = "Enrollment number wrong.";
             stepTwo.style.opacity = "0.5";
             stepTwo.style.pointerEvents = "none";
-            btnProceed.disabled = true;
         }
     } catch (error) {
-        msg.innerHTML = "Server connection error. Is VS Code running?";
+        msg.style.color = "red";
+        msg.innerHTML = "Connection error. Check if VS Code server is running.";
     }
 }
 
@@ -57,10 +55,10 @@ async function sendOtp() {
 
         if (data.success) {
             generatedOtp = Math.floor(100000 + Math.random() * 900000);
-            console.log("OTP IS:", generatedOtp);
+            console.log("OTP IS:", generatedOtp); // Look in F12 console to see the code
             document.getElementById('otpSection').style.display = "block";
             
-            let timeLeft = 120; // 2 Minutes (120 seconds)
+            let timeLeft = 120; // 2 Minutes
             clearInterval(otpTimer);
             otpTimer = setInterval(() => {
                 timeLeft--;
@@ -69,7 +67,7 @@ async function sendOtp() {
                 if (timeLeft <= 0) {
                     clearInterval(otpTimer);
                     generatedOtp = null;
-                    msg.innerHTML = "OTP Expired. Please click Proceed again.";
+                    msg.innerHTML = "OTP Expired. Please click Send OTP again.";
                     msg.style.color = "red";
                 }
             }, 1000);
