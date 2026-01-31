@@ -6,10 +6,8 @@ async function verifyEnrollment() {
     const msg = document.getElementById('statusMessage');
     const stepTwo = document.getElementById('stepTwoArea');
 
-    if (!enrollNo) return alert("Please enter Enrollment Number");
-
     try {
-        // !!! IMPORTANT: Ensure this URL matches your current ngrok address !!!
+        // This URL matches your ngrok dashboard screenshot
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
             headers: { "ngrok-skip-browser-warning": "true" }
         });
@@ -22,12 +20,9 @@ async function verifyEnrollment() {
             stepTwo.style.pointerEvents = "all";
         } else {
             msg.style.color = "red";
-            msg.innerHTML = "Enrollment number wrong.";
-            stepTwo.style.opacity = "0.5";
-            stepTwo.style.pointerEvents = "none";
+            msg.innerHTML = "Enrollment number not found.";
         }
     } catch (error) {
-        msg.style.color = "red";
         msg.innerHTML = "Connection error. Check if VS Code server is running.";
     }
 }
@@ -37,55 +32,33 @@ async function sendOtp() {
     const email = document.getElementById('email').value;
     const msg = document.getElementById('statusMessage');
 
-    if (!email.includes('@')) return alert("Please enter a valid email");
-
-    msg.innerHTML = "Verifying email...";
-
     try {
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/verify-email`, {
             method: 'POST',
-            headers: { 
-                "Content-Type": "application/json",
-                "ngrok-skip-browser-warning": "true" 
-            },
+            headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
             body: JSON.stringify({ enrollNo, email })
         });
-
         const data = await response.json();
 
         if (data.success) {
             generatedOtp = Math.floor(100000 + Math.random() * 900000);
-            console.log("OTP IS:", generatedOtp); // Look in F12 console to see the code
+            console.log("OTP:", generatedOtp); // Check F12 console
             document.getElementById('otpSection').style.display = "block";
-            
-            let timeLeft = 120; // 2 Minutes
+            let timeLeft = 120;
             clearInterval(otpTimer);
             otpTimer = setInterval(() => {
                 timeLeft--;
-                msg.style.color = "green";
                 msg.innerHTML = `OTP sent! Valid for ${timeLeft}s`;
-                if (timeLeft <= 0) {
-                    clearInterval(otpTimer);
-                    generatedOtp = null;
-                    msg.innerHTML = "OTP Expired. Please click Send OTP again.";
-                    msg.style.color = "red";
-                }
+                if (timeLeft <= 0) { clearInterval(otpTimer); generatedOtp = null; msg.innerHTML = "OTP Expired."; }
             }, 1000);
-        } else {
-            msg.style.color = "red";
-            msg.innerHTML = data.message;
-        }
-    } catch (error) {
-        msg.innerHTML = "Error connecting to server.";
-    }
+        } else { msg.innerHTML = "Email does not match our records."; }
+    } catch (error) { msg.innerHTML = "Error connecting to server."; }
 }
 
 function verifyOtp() {
-    const userInput = document.getElementById('otpInput').value;
-    if (userInput == generatedOtp && generatedOtp !== null) {
-        alert("Verification Successful!");
+    const input = document.getElementById('otpInput').value;
+    if (input == generatedOtp && generatedOtp !== null) {
+        alert("Success!");
         window.location.href = 'games.html';
-    } else {
-        alert("Invalid or Expired OTP");
-    }
+    } else { alert("Invalid OTP"); }
 }
