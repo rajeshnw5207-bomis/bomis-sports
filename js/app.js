@@ -7,7 +7,7 @@ async function verifyEnrollment() {
     if (!enrollNo) return alert("Please enter Enrollment Number");
 
     // Replace with your real backend URL once hosted
-    const response = await fetch('https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}');
+    const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`);
     const data = await response.json();
 
     if (data.alreadySelected) {
@@ -32,5 +32,6 @@ function resetStepTwo() {
     stepTwo.style.pointerEvents = "none";
     btnProceed.disabled = true;
 }
+
 
 
