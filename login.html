@@ -1,58 +1,51 @@
-let generatedOtp = null;
-let userClassFromServer = null;
+<div id="statusMessage" class="status-box"></div>
+    </div>
+    </div>
 
-// 1. Verify Enrollment Number
-async function verifyEnrollment() {
-    const enrollNo = document.getElementById('enrollmentNo').value;
-    const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
-    const data = await response.json();
+    <script>
+        let generatedOtp = null;
+        let userClassFromServer = null;
 
-    if (data.verified) {
-        document.getElementById('stepTwoArea').style.opacity = "1";
-        document.getElementById('stepTwoArea').style.pointerEvents = "auto";
-        document.getElementById('btnProceed').disabled = false;
-        document.getElementById('statusMessage').innerText = "Enrollment Verified! Please enter email.";
-    } else {
-        alert("Enrollment Number not found.");
-    }
-}
+        async function verifyEnrollment() {
+            const enrollNo = document.getElementById('enrollmentNo').value;
+            const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
+            const data = await response.json();
+            if (data.verified) {
+                document.getElementById('stepTwoArea').style.opacity = "1";
+                document.getElementById('stepTwoArea').style.pointerEvents = "auto";
+                document.getElementById('btnProceed').disabled = false;
+                document.getElementById('statusMessage').innerText = "Enrollment Verified!";
+            } else {
+                alert("Enrollment Number not found.");
+            }
+        }
 
-// 2. Send OTP to Email
-async function sendOtp() {
-    const enrollNo = document.getElementById('enrollmentNo').value;
-    const email = document.getElementById('email').value;
+        async function sendOtp() {
+            const enrollNo = document.getElementById('enrollmentNo').value;
+            const email = document.getElementById('email').value;
+            const response = await fetch('http://localhost:3000/api/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollNo, email })
+            });
+            const data = await response.json();
+            if (data.success) {
+                generatedOtp = data.otp;
+                userClassFromServer = data.studentClass;
+                document.getElementById('otpSection').style.display = "block";
+                alert("OTP sent!");
+            }
+        }
 
-    const response = await fetch('http://localhost:3000/api/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enrollNo, email })
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-        generatedOtp = data.otp; // Store OTP from server
-        userClassFromServer = data.studentClass; // Store class (e.g., 4 or 8)
-        document.getElementById('otpSection').style.display = "block";
-        alert("OTP sent to your email!");
-    } else {
-        alert(data.message);
-    }
-}
-
-// 3. THE FUNCTION YOU NEED: Verify OTP and Redirect
-function verifyOtp() {
-    const userEnteredOtp = document.getElementById('otpInput').value;
-    
-    if (userEnteredOtp == generatedOtp && generatedOtp !== null) {
-        alert("Verification Successful!");
-        
-        // Save the class so games.html knows which sports to show
-        localStorage.setItem('userClass', userClassFromServer);
-        
-        // Go to the selection page
-        window.location.href = 'games.html';
-    } else {
-        alert("Incorrect OTP. Please check your email.");
-    }
-}
+        function verifyOtp() {
+            const userEnteredOtp = document.getElementById('otpInput').value;
+            if (userEnteredOtp == generatedOtp && generatedOtp !== null) {
+                localStorage.setItem('userClass', userClassFromServer);
+                window.location.href = 'games.html';
+            } else {
+                alert("Incorrect OTP.");
+            }
+        }
+    </script>
+</body>
+</html>
