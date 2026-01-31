@@ -7,7 +7,11 @@ async function verifyEnrollment() {
     if (!enrollNo) return alert("Please enter Enrollment Number");
 
     try {
-        const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`);
+        const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
+    headers: {
+        "ngrok-skip-browser-warning": "69420"
+    }
+});
         const data = await response.json();
 
         if (data.verified) {
@@ -41,3 +45,4 @@ async function verifyEnrollment() {
         msg.innerHTML = "Error connecting to server. Is your backend running?";
     }
 }
+
