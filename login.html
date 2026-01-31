@@ -14,24 +14,30 @@
             
             <div class="input-group">
                 <label>Enrollment Number</label>
-                <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No." oninput="resetStepTwo()">
+                <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No.">
                 <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
             </div>
 
-            <div id="stepTwoArea" class="locked-section">
+            <div id="stepTwoArea" class="locked-section" style="opacity: 0.5; pointer-events: none;">
                 <div class="input-group">
                     <label>Email ID</label>
                     <input type="email" id="email" placeholder="Enter Registered Email">
                 </div>
-                <button id="btnProceed" class="btn" onclick="sendOTP()" disabled>Proceed</button>
+                <button id="btnProceed" class="btn" onclick="sendOtp()" disabled>Proceed</button>
+                
+                <div id="otpSection" style="display: none; margin-top: 15px;">
+                    <div class="input-group">
+                        <label>Enter OTP</label>
+                        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
+                        <button class="btn" onclick="verifyOtp()">Verify & Proceed</button>
+                    </div>
+                </div>
             </div>
 
             <div id="statusMessage" class="status-box"></div>
         </div>
     </div>
-</body>
-</html>
-<script src="js/app.js"></script> 
-</body>
-</html>
 
+    <script src="js/app.js"></script> 
+</body>
+</html>
