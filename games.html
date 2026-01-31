@@ -1,45 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Select Game</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <title>BOMIS SPORTS SELECTION</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <header><h1>Welcome to BOMIS SPORTS SELECTION</h1></header>
 
-  <div class="container">
+    <div class="container">
+        <div class="selection-box" id="main-ui">
+            <h3>Indoor Games (Select One)</h3>
+            <div class="options">
+                <label><input type="radio" name="indoor" value="Chess" required> Chess</label>
+                <label><input type="radio" name="indoor" value="Table Tennis"> Table Tennis</label>
+            </div>
 
-    <h1>Select Your Game</h1>
+            <h3 style="margin-top:20px;">Outdoor Games (Select One)</h3>
+            <div class="options">
+                <label><input type="radio" name="outdoor" value="Cricket" required> Cricket</label>
+                <label><input type="radio" name="outdoor" value="Football"> Football</label>
+            </div>
 
-    <h3>Indoor Games</h3>
+            <button class="submit-btn" onclick="submitSelection()">Submit Selection</button>
+        </div>
 
-    <p>
-      <input type="radio" disabled> Chess (FULL)
-    </p>
+        <div class="live-dashboard">
+            <h3>Live Availability</h3>
+            <div id="stats">
+                <p>Chess: 12/30</p>
+                <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+                <p>Cricket: 28/30</p>
+                <div class="progress-bar"><div class="progress-fill" style="width: 93%"></div></div>
+            </div>
+        </div>
+    </div>
 
-    <p>
-      <input type="radio" name="game"> Carrom (10 slots left)
-    </p>
+    <script>
+        function submitSelection() {
+            const indoor = document.querySelector('input[name="indoor"]:checked');
+            const outdoor = document.querySelector('input[name="outdoor"]:checked');
 
-    <h3>Outdoor Games</h3>
+            if(!indoor || !outdoor) {
+                alert("Please select one Indoor and one Outdoor game!");
+                return;
+            }
 
-    <p>
-      <input type="radio" name="game"> Cricket (5 slots left)
-    </p>
-
-    <p>
-      <input type="radio" name="game"> Football (12 slots left)
-    </p>
-
-    <button class="btn">
-      Submit Selection
-    </button>
-
-    <p class="warning">
-      Once submitted, cannot be changed.
-    </p>
-
-  </div>
-
+            document.getElementById('main-ui').innerHTML = `
+                <div style="text-align:center; padding: 40px;">
+                    <h2 style="color: #FF8C00;">Selection Successful! ✅</h2>
+                    <p><strong>Indoor:</strong> ${indoor.value}</p>
+                    <p><strong>Outdoor:</strong> ${outdoor.value}</p>
+                    <button onclick="window.location.reload()" style="margin-top:20px;">Change</button>
+                </div>
+            `;
+        }
+        
+    </script>
 </body>
 </html>
