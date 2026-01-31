@@ -1,3 +1,4 @@
+// Keep these at the very top so both functions can use them
 let generatedOtp = null;
 let otpTimer = null;
 
@@ -6,8 +7,9 @@ async function verifyEnrollment() {
     const msg = document.getElementById('statusMessage');
     const stepTwo = document.getElementById('stepTwoArea');
 
+    if (!enrollNo) return alert("Please enter Enrollment Number");
+
     try {
-        // This URL matches your ngrok dashboard screenshot
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
             headers: { "ngrok-skip-browser-warning": "true" }
         });
@@ -18,23 +20,25 @@ async function verifyEnrollment() {
             msg.innerHTML = "Enrollment Verified!";
             stepTwo.style.opacity = "1";
             stepTwo.style.pointerEvents = "all";
+            // Check if btnProceed exists in your HTML to avoid crashes
+            const btn = document.getElementById('btnProceed');
+            if(btn) btn.disabled = false;
         } else {
             msg.style.color = "red";
             msg.innerHTML = "Enrollment number not found.";
         }
     } catch (error) {
+        msg.style.color = "red";
         msg.innerHTML = "Connection error. Check if VS Code server is running.";
     }
 }
 
 async function sendOtp() {
-    let generatedOtp = null;
-let otpTimer = null;
-
-async function sendOtp() {
     const enrollNo = document.getElementById('enrollmentNo').value;
     const email = document.getElementById('email').value;
     const msg = document.getElementById('statusMessage');
+
+    if (!email) return alert("Please enter your email");
 
     msg.innerHTML = "Verifying email...";
 
@@ -51,12 +55,12 @@ async function sendOtp() {
         const data = await response.json();
 
         if (data.success) {
+            // IMPORTANT: No 'let' here, use the global variable
             generatedOtp = Math.floor(100000 + Math.random() * 900000);
-            console.log("TESTING OTP:", generatedOtp); // Look here in F12 Console
+            console.log("TESTING OTP:", generatedOtp); 
             
             document.getElementById('otpSection').style.display = "block";
             
-            // 2-MINUTE SESSION TIMER
             let timeLeft = 120;
             clearInterval(otpTimer);
             otpTimer = setInterval(() => {
@@ -66,20 +70,23 @@ async function sendOtp() {
                 if (timeLeft <= 0) {
                     clearInterval(otpTimer);
                     generatedOtp = null;
-                    msg.innerHTML = "OTP Expired. Please click Proceed again.";
+                    msg.innerHTML = "OTP Expired. Please click Send OTP again.";
                     msg.style.color = "red";
                 }
             }, 1000);
         } else {
             msg.style.color = "red";
-            msg.innerHTML = data.message;
+            msg.innerHTML = data.message || "Email does not match our records.";
         }
     } catch (error) {
-        msg.innerHTML = "Connection error. Is VS Code running?";
+        msg.style.color = "red";
+        msg.innerHTML = "Error connecting to server.";
     }
 }
+
 function verifyOtp() {
     const input = document.getElementById('otpInput').value;
+    // This will now work because generatedOtp is global
     if (input == generatedOtp && generatedOtp !== null) {
         alert("Success! Entering Games Selection...");
         window.location.href = 'games.html';
