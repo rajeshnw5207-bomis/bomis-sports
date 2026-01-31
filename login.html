@@ -2,39 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOMIS Student Login</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="login-container">
-        <div class="image-section" style="background-image: url('images/school.jpeg');"></div>
+        <div class="image-section" style="background-image: url('images/school.jpeg');">
+            </div>
 
         <div class="form-section">
-            <h1>Welcome to <span class="brand-orange">BOMIS</span> Sports Selection</h1>
-            
-            <div class="input-group">
-                <label>Enrollment Number</label>
-                <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No.">
-                <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
-            </div>
-
-            <div id="stepTwoArea" style="opacity: 0.5; pointer-events: none;">
-                <div class="input-group">
-                    <label>Email ID</label>
-                    <input type="email" id="email" placeholder="Enter Registered Email">
-                </div>
-                <button id="btnProceed" class="btn" onclick="sendOtp()" disabled>Proceed</button>
+            <div class="form-wrapper">
+                <h1>Welcome to <span class="brand-orange">BOMIS</span> Sports Selection</h1>
                 
-                <div id="otpSection" style="display: none; margin-top: 15px;">
+                <div class="input-group">
+                    <label>Enrollment Number</label>
+                    <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No.">
+                    <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
+                </div>
+
+                <div id="stepTwoArea" style="opacity: 0.5; pointer-events: none; transition: 0.3s;">
                     <div class="input-group">
-                        <label>Enter OTP</label>
-                        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
-                        <button class="btn" onclick="verifyOtp()">Verify & Proceed</button>
+                        <label>Email ID</label>
+                        <input type="email" id="email" placeholder="Enter Registered Email">
+                    </div>
+                    <button id="btnProceed" class="btn" onclick="sendOtp()" disabled>Proceed</button>
+                    
+                    <div id="otpSection" style="display: none; margin-top: 15px;">
+                        <div class="input-group">
+                            <label>Enter OTP</label>
+                            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
+                            <button class="btn verify-btn" onclick="verifyOtp()">Verify & Proceed</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="statusMessage" class="status-box"></div>
+                <div id="statusMessage" class="status-box"></div>
+            </div>
         </div>
     </div>
 
@@ -44,32 +48,44 @@
 
         async function verifyEnrollment() {
             const enrollNo = document.getElementById('enrollmentNo').value;
-            const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
-            const data = await response.json();
-            if (data.verified) {
-                document.getElementById('stepTwoArea').style.opacity = "1";
-                document.getElementById('stepTwoArea').style.pointerEvents = "auto";
-                document.getElementById('btnProceed').disabled = false;
-                document.getElementById('statusMessage').innerText = "Enrollment Verified!";
-            } else {
-                alert("Enrollment Number not found.");
+            // Note: Replace localhost with your ngrok URL for remote testing
+            try {
+                const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
+                const data = await response.json();
+                if (data.verified) {
+                    document.getElementById('stepTwoArea').style.opacity = "1";
+                    document.getElementById('stepTwoArea').style.pointerEvents = "auto";
+                    document.getElementById('btnProceed').disabled = false;
+                    document.getElementById('statusMessage').innerText = "Enrollment Verified!";
+                    document.getElementById('statusMessage').style.color = "#4CAF50";
+                } else {
+                    alert("Enrollment Number not found.");
+                }
+            } catch (error) {
+                alert("Server Error: Make sure your backend (node js/app.js) is running!");
             }
         }
 
         async function sendOtp() {
             const enrollNo = document.getElementById('enrollmentNo').value;
             const email = document.getElementById('email').value;
-            const response = await fetch('http://localhost:3000/api/verify-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enrollNo, email })
-            });
-            const data = await response.json();
-            if (data.success) {
-                generatedOtp = data.otp;
-                userClassFromServer = data.studentClass;
-                document.getElementById('otpSection').style.display = "block";
-                alert("OTP sent!");
+            try {
+                const response = await fetch('http://localhost:3000/api/verify-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enrollNo, email })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    generatedOtp = data.otp;
+                    userClassFromServer = data.studentClass;
+                    document.getElementById('otpSection').style.display = "block";
+                    alert("OTP sent to your email!");
+                } else {
+                    alert("Email verification failed.");
+                }
+            } catch (error) {
+                alert("Could not connect to server.");
             }
         }
 
@@ -79,7 +95,7 @@
                 localStorage.setItem('userClass', userClassFromServer);
                 window.location.href = 'games.html';
             } else {
-                alert("Incorrect OTP.");
+                alert("Incorrect OTP. Please check your email.");
             }
         }
     </script>
