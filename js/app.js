@@ -28,37 +28,62 @@ async function verifyEnrollment() {
 }
 
 async function sendOtp() {
+    let generatedOtp = null;
+let otpTimer = null;
+
+async function sendOtp() {
     const enrollNo = document.getElementById('enrollmentNo').value;
     const email = document.getElementById('email').value;
     const msg = document.getElementById('statusMessage');
 
+    msg.innerHTML = "Verifying email...";
+
     try {
         const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/verify-email`, {
             method: 'POST',
-            headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+            headers: { 
+                "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true" 
+            },
             body: JSON.stringify({ enrollNo, email })
         });
+
         const data = await response.json();
 
         if (data.success) {
             generatedOtp = Math.floor(100000 + Math.random() * 900000);
-            console.log("OTP:", generatedOtp); // Check F12 console
+            console.log("TESTING OTP:", generatedOtp); // Look here in F12 Console
+            
             document.getElementById('otpSection').style.display = "block";
+            
+            // 2-MINUTE SESSION TIMER
             let timeLeft = 120;
             clearInterval(otpTimer);
             otpTimer = setInterval(() => {
                 timeLeft--;
+                msg.style.color = "green";
                 msg.innerHTML = `OTP sent! Valid for ${timeLeft}s`;
-                if (timeLeft <= 0) { clearInterval(otpTimer); generatedOtp = null; msg.innerHTML = "OTP Expired."; }
+                if (timeLeft <= 0) {
+                    clearInterval(otpTimer);
+                    generatedOtp = null;
+                    msg.innerHTML = "OTP Expired. Please click Proceed again.";
+                    msg.style.color = "red";
+                }
             }, 1000);
-        } else { msg.innerHTML = "Email does not match our records."; }
-    } catch (error) { msg.innerHTML = "Error connecting to server."; }
+        } else {
+            msg.style.color = "red";
+            msg.innerHTML = data.message;
+        }
+    } catch (error) {
+        msg.innerHTML = "Connection error. Is VS Code running?";
+    }
 }
-
 function verifyOtp() {
     const input = document.getElementById('otpInput').value;
     if (input == generatedOtp && generatedOtp !== null) {
-        alert("Success!");
+        alert("Success! Entering Games Selection...");
         window.location.href = 'games.html';
-    } else { alert("Invalid OTP"); }
+    } else {
+        alert("Invalid or Expired OTP");
+    }
 }
