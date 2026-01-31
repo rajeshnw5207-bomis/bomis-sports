@@ -1,34 +1,39 @@
-/* Center container on page */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  min-height: 100vh;
-  display: flex;
-}
-/* Left side image */
-.left-panel {
-  width: 50%;
-  background-image: url("../images/school.jpeg");
-  background-size: cover;
-  background-position: center;
+/* Layout */
+.login-container { display: flex; height: 100vh; font-family: sans-serif; }
+
+.image-section { flex: 1.2; background-size: cover; background-position: center; }
+
+.form-section { 
+    flex: 0.8; 
+    background-color: #f8fafc; /* Quiet light blue-grey */
+    padding: 60px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
 }
 
-/* Right side content */
-.right-panel {
-  width: 50%;
-  background: #f4f6fb; /* soft light blue/grey */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Colors & Text */
+.brand-orange { color: #e67e22; }
+h1 { font-size: 2rem; color: #2c3e50; margin-bottom: 30px; }
+
+/* Inputs & Buttons */
+.input-group { margin-bottom: 20px; }
+label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+
+.btn { 
+    background-color: #3498db; 
+    color: white; 
+    padding: 12px 20px; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    width: 100%;
+    margin-top: 10px;
 }
 
-/* Box inside right side */
-.container {
-  background: white;
-  padding: 30px;
-  width: 80%;
-  max-width: 420px;
-  border-radius: 8px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  text-align: center;
-}
+.btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+/* Locking Logic Styling */
+.locked-section { opacity: 0.3; pointer-events: none; transition: 0.3s; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+.status-box { margin-top: 20px; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
