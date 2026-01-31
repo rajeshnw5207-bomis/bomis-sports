@@ -1,29 +1,10 @@
+/* --- GLOBAL STYLES --- */
 body {
-    background-color: #002147 !important; /* Forces the Navy Blue */
-    color: white;
-    font-family: sans-serif;
-    margin: 0;
-}
-
-.container {
-    display: flex;
-    justify-content: center;
-    padding: 40px;
-    gap: 30px;
-    
-}
-
-.selection-box { flex: 7; background: white; color: #333; padding: 30px; border-radius: 10px; }
-.live-dashboard { flex: 3; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; border: 1px solid #FF8C00; }
-.submit-btn { background: #FF8C00; color: white; width: 100%; padding: 15px; border: none; cursor: pointer; margin-top: 20px; }
-body {
-    background-color: #002147; /* Deep Navy Blue */
+    background-color: #002147 !important; /* Deep Navy Blue */
     color: white;
     font-family: Arial, sans-serif;
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 0;
 }
 
 header {
@@ -35,11 +16,40 @@ header {
     font-weight: bold;
 }
 
-.container {
+/* --- LOGIN PAGE (SPLIT SCREEN) --- */
+.login-container {
+    display: flex; /* Creates the split */
+    height: 100vh;
+    width: 100%;
+}
+
+.image-section {
+    flex: 1.2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.form-section {
+    flex: 0.8;
+    background-color: #002147;
     display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.brand-orange {
+    color: #FF8C00;
+}
+
+/* --- GAMES PAGE (DASHBOARD LAYOUT) --- */
+.container {
+    display: flex; /* Side-by-side dashboard */
     width: 90%;
     max-width: 1100px;
-    margin-top: 30px;
+    margin: 30px auto; /* Centers the dashboard */
     gap: 20px;
 }
 
@@ -59,5 +69,49 @@ header {
     border-radius: 10px;
 }
 
-.stat-bar { background: #444; height: 10px; border-radius: 5px; margin: 5px 0; }
-.fill { background: #FF8C00; height: 100%; border-radius: 5px; }
+/* --- BUTTONS & UI ELEMENTS --- */
+.btn, .submit-btn {
+    background: #FF8C00;
+    color: white;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #e67e00;
+}
+
+.input-group {
+    width: 100%;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* --- PROGRESS BARS --- */
+.stat-bar { 
+    background: #444; 
+    height: 10px; 
+    border-radius: 5px; 
+    margin: 5px 0 15px 0; 
+}
+
+.fill { 
+    background: #FF8C00; 
+    height: 100%; 
+    border-radius: 5px; 
+}
