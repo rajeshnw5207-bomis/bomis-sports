@@ -14,6 +14,8 @@ async function verifyEnrollment() {
             msg.innerHTML = "Enrollment Verified!";
             stepTwo.style.opacity = "1";
             stepTwo.style.pointerEvents = "all";
+            btnProceed.disabled = false; // This unlocks the button
+}
         } else {
             msg.style.color = "red";
             msg.innerHTML = "Enrollment number wrong.";
@@ -25,3 +27,4 @@ async function verifyEnrollment() {
     }
 }
 // Add your sendOtp() and verifyOtp() functions here below
+
