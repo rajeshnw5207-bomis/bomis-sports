@@ -1,122 +1,89 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+<script>
+    const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+    let generatedOtp = null;
 
-const app = express();
-
-// 1. CORS Configuration - Explicitly allowing your GitHub frontend
-app.use(cors({
-    origin: 'https://rajeshnw5207-bomis.github.io',
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
-
-app.use(express.json());
-
-// 2. Database Connection (Supabase/PostgreSQL)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// 3. UPDATED NODEMAILER: Optimized for Render's Network Environment
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS on port 587
-    auth: {
-        user: 'rajesh.j@bomis-lbnagar.com',
-        pass: 'tmuz msvd pixk bhcm' 
-    },
-    // Added pooling to keep the connection alive and prevent timeouts
-    pool: true, 
-    maxConnections: 3,
-    tls: {
-        rejectUnauthorized: false, // Prevents handshake failures on cloud servers
-        minVersion: 'TLSv1.2'
+    async function verifyEnrollment() {
+        const enrollNo = document.getElementById('enrollment_no').value.trim().toUpperCase();
+        const msg = document.getElementById('statusMessage');
+        const enrollBtn = document.getElementById('verifyEnrollBtn');
+        
+        if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
+        
+        enrollBtn.disabled = true;
+        msg.style.color = "#FF9100";
+        msg.innerHTML = "Checking database...";
+        
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+            const data = await response.json();
+            
+            if (data.verified) {
+                msg.style.color = "#4CAF50";
+                msg.innerHTML = `Welcome, ${data.studentName}! Please enter your email.`;
+                document.getElementById('stepTwoArea').style.display = "block";
+                document.getElementById('sendOtpBtn').disabled = false;
+                localStorage.setItem('enrollment_no', enrollNo);
+            } else {
+                msg.style.color = "#FF5252";
+                msg.innerHTML = "Enrollment not found.";
+                enrollBtn.disabled = false;
+            }
+        } catch (e) { 
+            msg.style.color = "#FF5252";
+            msg.innerHTML = "Server waking up. Please wait 30s.";
+            enrollBtn.disabled = false;
+        }
     }
-});
 
-// Route 1: Enrollment Number Verification
-app.get('/api/check-status/:enrollment_no', async (req, res) => {
-    try {
-        const enrollNo = req.params.enrollment_no.trim().toUpperCase();
-        const result = await pool.query(
-            'SELECT student_name, student_class, section FROM bomis_db WHERE enrollment_no = $1', 
-            [enrollNo] 
-        );
+    async function sendOtp() {
+        const emailInput = document.getElementById('email').value.trim();
+        const enrollment_no = localStorage.getItem('enrollment_no');
+        const sendBtn = document.getElementById('sendOtpBtn');
+        const msg = document.getElementById('statusMessage');
+        
+        if(!emailInput) { alert("Please enter email"); return; }
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = "Verifying...";
 
-        if (result.rows.length > 0) {
-            res.json({ 
-                verified: true, 
-                studentName: result.rows[0].student_name,
-                studentClass: result.rows[0].student_class,
-                section: result.rows[0].section
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enrollment_no, email: emailInput })
             });
-        } else {
-            res.json({ verified: false });
-        }
-    } catch (err) {
-        console.error("Database Error:", err);
-        res.status(500).json({ error: "Database connection failed." });
-    }
-});
-
-// Route 2: Email Match & OTP Generation
-app.post('/api/verify-email', async (req, res) => {
-    const { enrollment_no, email } = req.body;
-    
-    try {
-        const enrollNo = enrollment_no.trim().toUpperCase();
-        const studentEmail = email.trim().toLowerCase();
-
-        // Security Check: Match BOTH Enrollment ID and Email in Database
-        const result = await pool.query(
-            'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = $2',
-            [enrollNo, studentEmail]
-        );
-
-        if (result.rows.length > 0) {
-            const otp = Math.floor(100000 + Math.random() * 900000);
-            const studentName = result.rows[0].student_name;
-
-            const mailOptions = {
-                from: '"BOMIS Sports" <rajesh.j@bomis-lbnagar.com>',
-                to: studentEmail,
-                subject: 'Your Sports Selection OTP',
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 2px solid #FF9100; padding: 20px; border-radius: 10px;">
-                        <h2 style="color: #FF9100; text-align: center;">BOMIS Sports Selection</h2>
-                        <p>Hello <strong>${studentName}</strong>,</p>
-                        <p>Your verification code is:</p>
-                        <div style="text-align: center; font-size: 36px; font-weight: bold; background: #fdf2e9; padding: 20px; border-radius: 8px; color: #002347; letter-spacing: 5px;">
-                            ${otp}
-                        </div>
-                        <p style="margin-top: 20px; color: #666; font-size: 14px; text-align: center;">Please enter this code on the website to choose your sports.</p>
+            const data = await response.json();
+            
+            if (data.success) {
+                generatedOtp = data.otp;
+                
+                // DISPLAY THE OTP ON SCREEN IN AN ORANGE BOX
+                msg.innerHTML = `
+                    <div style="background: #FFF3E0; padding: 15px; border: 2px solid #FF9100; border-radius: 8px; margin-top: 10px; text-align: center;">
+                        <p style="color: #333; font-weight: bold;">Your Verification Code:</p>
+                        <h2 style="font-size: 32px; color: #002347; letter-spacing: 5px; margin: 5px 0;">${generatedOtp}</h2>
+                        <p style="font-size: 12px; color: #666;">Enter this code below to proceed.</p>
                     </div>
-                `
-            };
-
-            // Send the email
-            await transporter.sendMail(mailOptions);
-            console.log(`SUCCESS: OTP sent to ${studentEmail}`);
-            res.json({ success: true, otp: otp }); 
-
-        } else {
-            // Error: No record matches that ID + Email combination
-            res.status(400).json({ success: false, message: "Email mismatch. Use your registered school email." });
+                `;
+                
+                document.getElementById('otpSection').style.display = "block";
+                sendBtn.innerHTML = "Verified";
+            } else {
+                alert(data.message || "Email mismatch.");
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = "Send OTP";
+            }
+        } catch (e) { 
+            alert("Connection error."); 
+            sendBtn.disabled = false;
         }
-    } catch (err) {
-        console.error("Nodemailer System Error:", err);
-        res.status(500).json({ success: false, error: "Email system timeout. Please try again." });
     }
-});
 
-// 4. Server Initialization
-// Binding to 0.0.0.0 is mandatory for Render's health checks
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Backend Active on Port ${PORT}`);
-});
+    function verifyOtp() {
+        const inputOtp = document.getElementById('otpInput').value.trim();
+        if (inputOtp == generatedOtp) {
+            window.location.href = "games.html";
+        } else { 
+            alert("Invalid OTP. Enter the code shown above."); 
+        }
+    }
+</script>
