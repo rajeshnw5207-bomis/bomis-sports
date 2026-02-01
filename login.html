@@ -49,7 +49,7 @@
             const enrollNo = document.getElementById('enrollmentNo').value;
             // Note: Replace localhost with your ngrok URL for remote testing
             try {
-                const response = await fetch(`http://localhost:3000/api/check-status/${enrollNo}`);
+                const response = await fetch('https://bomis-sports-backend.onrender.com/api/check-status/${enrollNo}')
                 const data = await response.json();
                 if (data.verified) {
                     document.getElementById('stepTwoArea').style.opacity = "1";
@@ -100,4 +100,5 @@
     </script>
 </body>
 </html>
+
 
