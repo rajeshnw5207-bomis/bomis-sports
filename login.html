@@ -25,12 +25,10 @@
         <h1>Welcome to <span>BOMIS</span> Sports Selection</h1>
         <div class="form-group">
             <label>Enrollment Number</label>
-            <input type="text" id="enrollment_no" placeholder="e.g. 25BLB0004">
+            <input type="text" id="enrollment_no" placeholder="e.g. 19BLB0003">
             <button class="btn-verify" onclick="verifyEnrollment()">Verify Enrollment</button>
         </div>
-        
         <div id="statusMessage">Waiting for input...</div>
-
         <div id="stepTwoArea">
             <div class="form-group">
                 <label>Email ID</label>
@@ -38,7 +36,6 @@
                 <button class="btn-verify" style="background-color: #2c3e50;" onclick="sendOtp()">Send OTP</button>
             </div>
         </div>
-
         <div id="otpSection">
             <div class="form-group">
                 <label>OTP Verification</label>
@@ -47,46 +44,33 @@
             </div>
         </div>
     </div>
-
     <script>
         const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
         let generatedOtp = null;
 
         async function verifyEnrollment() {
-            // FIXED: Using enrollment_no consistently
-            const enrollment_no = document.getElementById('enrollment_no').value.trim();
+            const enrollNo = document.getElementById('enrollment_no').value.trim();
             const msg = document.getElementById('statusMessage');
-
-            if(!enrollment_no) { alert("Please enter Enrollment Number"); return; }
-            
-            msg.style.color = "#FF9100";
+            if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
             msg.innerHTML = "Verifying...";
-            
             try {
-                const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollment_no}`);
+                const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
                 const data = await response.json();
-
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = "Enrollment Verified! Please enter email.";
                     document.getElementById('stepTwoArea').style.display = "block";
-                    localStorage.setItem('enrollment_no', enrollment_no);
+                    localStorage.setItem('enrollment_no', enrollNo);
                 } else {
                     msg.style.color = "#FF5252";
                     msg.innerHTML = "Enrollment not found.";
                 }
-            } catch (e) { 
-                msg.innerHTML = "Connection Error. Is the backend live?"; 
-                console.error(e);
-            }
+            } catch (e) { msg.innerHTML = "Connection Error."; }
         }
 
         async function sendOtp() {
             const email = document.getElementById('email').value.trim();
             const enrollment_no = localStorage.getItem('enrollment_no');
-            
-            if(!email) { alert("Please enter your email"); return; }
-
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
@@ -94,14 +78,11 @@
                     body: JSON.stringify({ enrollment_no, email })
                 });
                 const data = await response.json();
-                
                 if (data.success) {
                     generatedOtp = Math.floor(100000 + Math.random() * 900000);
                     alert("YOUR OTP: " + generatedOtp);
                     document.getElementById('otpSection').style.display = "block";
-                } else { 
-                    alert("Email mismatch. Please use the registered email."); 
-                }
+                } else { alert("Email mismatch."); }
             } catch (e) { alert("Connection Error"); }
         }
 
