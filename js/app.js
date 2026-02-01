@@ -12,7 +12,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// 1. Enrollment Verification
+// 1. Enrollment Check
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const enrollNo = req.params.enrollment_no.trim().toUpperCase();
@@ -29,7 +29,7 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// 2. Email Verification
+// 2. Email/OTP Verification
 app.post('/api/verify-email', async (req, res) => {
     const { enrollment_no, email } = req.body;
     try {
@@ -41,12 +41,12 @@ app.post('/api/verify-email', async (req, res) => {
             const otp = Math.floor(100000 + Math.random() * 900000);
             res.json({ success: true, otp: otp });
         } else {
-            res.status(400).json({ success: false, message: "Email mismatch" });
+            res.status(400).json({ success: false, message: "Email not found." });
         }
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// 3. Live Sidebar Counts
+// 3. Live Dashboard Counts
 app.get('/api/live-counts', async (req, res) => {
     try {
         const query = `
@@ -67,7 +67,7 @@ app.get('/api/live-counts', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// 4. Record Selection
+// 4. Save Selection
 app.post('/api/save-selection', async (req, res) => {
     const { enrollment_no, indoor_game, outdoor_game } = req.body;
     try {
