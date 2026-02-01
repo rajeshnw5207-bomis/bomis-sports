@@ -8,14 +8,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background-color: #fff; }
         
-        /* Left Side: School Building Image */
+        /* Fixed: Points to your GitHub images folder */
         .left-side { 
             flex: 1.2; 
-            background: url('https://thebirlaopenmindsschool.com/images/school.jpeg') no-repeat center center; 
+            background: url('images/school-building.jpg') no-repeat center center; 
             background-size: cover; 
+            background-color: #ddd; /* Fallback color */
         }
         
-        /* Right Side: Blue Login Container */
         .right-side { 
             flex: 0.8; 
             background-color: #002347; 
@@ -26,11 +26,11 @@
             padding: 60px; 
         }
         
-        h1 { font-size: 2.5rem; margin-bottom: 25px; line-height: 1.2; }
+        h1 { font-size: 2.5rem; margin-bottom: 25px; }
         h1 span { color: #FF9100; }
         
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 1rem; color: #ccc; }
+        label { display: block; margin-bottom: 8px; color: #ccc; }
         
         input { 
             width: 100%; 
@@ -39,8 +39,6 @@
             border-radius: 4px; 
             font-size: 1rem; 
             margin-bottom: 10px; 
-            background-color: white;
-            color: #333;
         }
 
         .btn-verify { 
@@ -51,15 +49,12 @@
             border: none; 
             border-radius: 4px; 
             font-weight: bold; 
-            font-size: 1rem;
             cursor: pointer; 
-            transition: 0.3s; 
         }
-        .btn-verify:hover { background-color: #e68200; }
 
-        #statusMessage { margin: 15px 0; font-size: 0.95rem; text-decoration: underline; color: #FF9100; }
+        #statusMessage { margin: 15px 0; font-size: 0.95rem; color: #FF9100; }
         
-        /* This hides the Email and OTP sections until the enrollment is verified */
+        /* Email and OTP sections stay hidden until verified */
         #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
     </style>
 </head>
@@ -104,34 +99,28 @@
             const msg = document.getElementById('statusMessage');
             const stepTwo = document.getElementById('stepTwoArea');
 
-            if (!enrollNo) return alert("Please enter Enrollment Number");
-
-            msg.innerHTML = "Connecting to server...";
-            msg.style.color = "#FF9100";
-
+            msg.innerHTML = "Verifying...";
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
                 const data = await response.json();
 
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = `Welcome, ${data.studentName}! Enrollment Verified.`;
-                    stepTwo.style.display = "block"; // Shows the Email ID tab
+                    msg.innerHTML = "Success! Now enter your email.";
+                    stepTwo.style.display = "block";
                     localStorage.setItem('enrollmentNo', enrollNo);
                 } else {
                     msg.style.color = "#FF5252";
-                    msg.innerHTML = "Enrollment number not found.";
+                    msg.innerHTML = "Enrollment not found.";
                 }
-            } catch (error) {
-                msg.innerHTML = "Server waking up... please try again in 30 seconds.";
+            } catch (e) {
+                msg.innerHTML = "Server waking up... try again in 30s.";
             }
         }
 
         async function sendOtp() {
-            const enrollNo = localStorage.getItem('enrollmentNo');
             const email = document.getElementById('email').value.trim();
-            const msg = document.getElementById('statusMessage');
-
+            const enrollNo = localStorage.getItem('enrollmentNo');
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
@@ -139,17 +128,14 @@
                     body: JSON.stringify({ enrollNo, email })
                 });
                 const data = await response.json();
-
                 if (data.success) {
                     generatedOtp = Math.floor(100000 + Math.random() * 900000);
-                    alert("TESTING OTP: " + generatedOtp);
+                    alert("OTP: " + generatedOtp);
                     document.getElementById('otpSection').style.display = "block";
-                    msg.innerHTML = "OTP Sent!";
                 } else {
-                    msg.style.color = "#FF5252";
-                    msg.innerHTML = "Email mismatch.";
+                    alert("Email mismatch.");
                 }
-            } catch (e) { alert("Connection Error"); }
+            } catch (e) { alert("Error connecting."); }
         }
 
         function verifyOtp() {
@@ -160,4 +146,3 @@
     </script>
 </body>
 </html>
-
