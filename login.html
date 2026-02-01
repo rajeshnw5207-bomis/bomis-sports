@@ -8,39 +8,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background-color: #fff; }
         
-        /* Left Side: Points to your actual GitHub images folder */
         .left-side { 
             flex: 1.2; 
             background: url('images/school.jpeg') no-repeat center center; 
             background-size: cover; 
             background-color: #f0f0f0;
         }
-// REPLACE FROM LINE 18 DOWN TO LINE 42 WITH THIS:
-
-// Check if student exists
-app.get('/api/check-status/:enrollment_no', async (req, res) => {
-    try {
-        const { enrollment_no } = req.params; 
-        const result = await pool.query(
-            'SELECT student_name, student_class, section FROM students WHERE enrollment_no = $1', 
-            [enrollment_no] // This MUST match the variable name above
-        );
-
-        if (result.rows.length > 0) {
-            res.json({ 
-                verified: true, 
-                studentName: result.rows[0].student_name,
-                studentClass: result.rows[0].student_class,
-                section: result.rows[0].section
-            });
-        } else {
-            res.json({ verified: false });
-        }
-    } catch (err) {
-        console.error("Database Error:", err);
-        res.status(500).json({ error: "Database error" });
-    }
-});        
+        
         .right-side { 
             flex: 0.8; 
             background-color: #002347; 
@@ -69,8 +43,6 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
         }
 
         #statusMessage { margin: 15px 0; font-size: 0.95rem; color: #FF9100; min-height: 20px; }
-        
-        /* Hidden initially, appears after enrollment is verified */
         #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
     </style>
 </head>
@@ -130,7 +102,7 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
                     msg.innerHTML = "Enrollment not found.";
                 }
             } catch (e) {
-                msg.innerHTML = "Server waking up... please try again in 30 seconds.";
+                msg.innerHTML = "Server error. Try again shortly.";
             }
         }
 
@@ -162,6 +134,3 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
     </script>
 </body>
 </html>
-
-
-
