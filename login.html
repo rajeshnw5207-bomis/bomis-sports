@@ -6,16 +6,16 @@
     <title>BOMIS Sports Selection</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { display: flex; height: 100vh; overflow: hidden; background-color: white; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: #fff; }
         
-        /* Left Side: The Building Image */
+        /* Left Side: School Building Image */
         .left-side { 
             flex: 1.2; 
-            background: url('https://thebirlaopenmindsschool.com/images/school-building.jpg') no-repeat center center; 
+            background: url('https://thebirlaopenmindsschool.com/images/school.jpg') no-repeat center center; 
             background-size: cover; 
         }
         
-        /* Right Side: The Blue Login Form */
+        /* Right Side: Blue Login Container */
         .right-side { 
             flex: 0.8; 
             background-color: #002347; 
@@ -43,7 +43,6 @@
             color: #333;
         }
 
-        /* Verify Button Styles */
         .btn-verify { 
             width: 100%; 
             padding: 15px; 
@@ -54,26 +53,14 @@
             font-weight: bold; 
             font-size: 1rem;
             cursor: pointer; 
-            transition: background 0.3s; 
+            transition: 0.3s; 
         }
         .btn-verify:hover { background-color: #e68200; }
-        
-        /* Disabled Proceed Button Style */
-        .btn-proceed { 
-            width: 100%; 
-            padding: 15px; 
-            background-color: #3d4a5d; 
-            color: #7a869a; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            cursor: not-allowed; 
-            margin-top: 10px; 
-        }
 
-        #statusMessage { margin: 15px 0; font-size: 0.95rem; font-weight: 500; }
-        #stepTwoArea { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
-        #otpSection { display: none; margin-top: 15px; }
+        #statusMessage { margin: 15px 0; font-size: 0.95rem; text-decoration: underline; color: #FF9100; }
+        
+        /* This hides the Email and OTP sections until the enrollment is verified */
+        #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
     </style>
 </head>
 <body>
@@ -109,7 +96,6 @@
     </div>
 
     <script>
-        // Your LIVE Render backend URL
         const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
         let generatedOtp = null;
 
@@ -118,14 +104,10 @@
             const msg = document.getElementById('statusMessage');
             const stepTwo = document.getElementById('stepTwoArea');
 
-            if (!enrollNo) {
-                msg.innerHTML = "Please enter Enrollment Number.";
-                msg.style.color = "#FF9100";
-                return;
-            }
+            if (!enrollNo) return alert("Please enter Enrollment Number");
 
             msg.innerHTML = "Connecting to server...";
-            msg.style.color = "#5dade2";
+            msg.style.color = "#FF9100";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
@@ -134,18 +116,14 @@
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = `Welcome, ${data.studentName}! Enrollment Verified.`;
-                    stepTwo.style.display = "block";
+                    stepTwo.style.display = "block"; // Shows the Email ID tab
                     localStorage.setItem('enrollmentNo', enrollNo);
-                    localStorage.setItem('studentName', data.studentName);
-                    localStorage.setItem('studentClass', data.studentClass);
                 } else {
                     msg.style.color = "#FF5252";
                     msg.innerHTML = "Enrollment number not found.";
                 }
             } catch (error) {
-                console.error(error);
-                msg.style.color = "#FF9100";
-                msg.innerHTML = "Server is waking up. Please try again in 30 seconds.";
+                msg.innerHTML = "Server waking up... please try again in 30 seconds.";
             }
         }
 
@@ -153,10 +131,6 @@
             const enrollNo = localStorage.getItem('enrollmentNo');
             const email = document.getElementById('email').value.trim();
             const msg = document.getElementById('statusMessage');
-
-            if (!email) return alert("Please enter email");
-
-            msg.innerHTML = "Verifying email...";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
@@ -170,24 +144,18 @@
                     generatedOtp = Math.floor(100000 + Math.random() * 900000);
                     alert("TESTING OTP: " + generatedOtp);
                     document.getElementById('otpSection').style.display = "block";
-                    msg.innerHTML = "OTP Sent! Please check your email.";
-                    msg.style.color = "#4CAF50";
+                    msg.innerHTML = "OTP Sent!";
                 } else {
                     msg.style.color = "#FF5252";
-                    msg.innerHTML = data.message || "Email mismatch.";
+                    msg.innerHTML = "Email mismatch.";
                 }
-            } catch (e) {
-                alert("Server connection error.");
-            }
+            } catch (e) { alert("Connection Error"); }
         }
 
         function verifyOtp() {
-            const userInput = document.getElementById('otpInput').value;
-            if (userInput == generatedOtp) {
+            if (document.getElementById('otpInput').value == generatedOtp) {
                 window.location.href = "sports-selection.html";
-            } else {
-                alert("Invalid OTP. Please try again.");
-            }
+            } else { alert("Invalid OTP"); }
         }
     </script>
 </body>
