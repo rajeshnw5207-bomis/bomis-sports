@@ -12,7 +12,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// ROUTE: Check student status and enrollment
+// 1. CHECK STATUS (Verification)
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const enrollNo = req.params.enrollment_no.trim().toUpperCase();
@@ -29,7 +29,24 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// ROUTE: Live Dashboard Counts
+// 2. VERIFY EMAIL (Missing in your previous version)
+app.post('/api/verify-email', async (req, res) => {
+    const { enrollment_no, email } = req.body;
+    try {
+        const result = await pool.query(
+            'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = $2',
+            [enrollment_no.toUpperCase(), email.trim().toLowerCase()]
+        );
+        if (result.rows.length > 0) {
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            res.json({ success: true, otp: otp });
+        } else {
+            res.status(400).json({ success: false, message: "Email not found for this enrollment." });
+        }
+    } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// 3. LIVE DASHBOARD COUNTS
 app.get('/api/live-counts', async (req, res) => {
     try {
         const query = `
@@ -50,7 +67,7 @@ app.get('/api/live-counts', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// ROUTE: Save sports selection
+// 4. SAVE SPORTS SELECTION
 app.post('/api/save-selection', async (req, res) => {
     const { enrollment_no, indoor_game, outdoor_game } = req.body;
     try {
