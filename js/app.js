@@ -38,11 +38,11 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
 });
 
 app.post('/api/verify-email', async (req, res) => {
-    const { enrollNo, email } = req.body;
+    const { enollment_no, email } = req.body;
     try {
         const result = await pool.query(
             'SELECT * FROM students WHERE enrollment_no = $1 AND email = $2',
-            [enrollNo, email]
+            [enollment_no, email]
         );
         if (result.rows.length > 0) {
             res.json({ success: true });
@@ -56,3 +56,4 @@ app.post('/api/verify-email', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
