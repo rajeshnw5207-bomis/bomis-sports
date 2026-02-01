@@ -1,101 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOMIS Student Login</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="login-container">
-        <div class="image-section" style="background-image: url('images/school.jpeg');"></div>
+<script>
+    let generatedOtp = null;
+    let otpTimer = null;
+    const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
-        <div class="form-section">
-            <div class="form-wrapper">
-                <h1>Welcome to <span class="brand-orange">BOMIS</span> Sports Selection</h1>
+    async function verifyEnrollment() {
+        const enrollNo = document.getElementById('enrollmentNo').value;
+        const msg = document.getElementById('statusMessage');
+        const stepTwo = document.getElementById('stepTwoArea');
+
+        msg.innerHTML = "Connecting to server...";
+        msg.style.color = "blue";
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+            const data = await response.json();
+
+            if (data.verified) {
+                msg.style.color = "green";
+                msg.innerHTML = `Welcome, ${data.studentName}! Please verify email.`;
+                stepTwo.style.opacity = "1";
+                stepTwo.style.pointerEvents = "all";
                 
-                <div class="input-group">
-                    <label>Enrollment Number</label>
-                    <input type="text" id="enrollmentNo" placeholder="Enter Enrollment No.">
-                    <button class="btn" onclick="verifyEnrollment()">Verify Enrollment</button>
-                </div>
-
-                <div id="stepTwoArea" style="opacity: 0.5; pointer-events: none;">
-                    <div class="input-group">
-                        <label>Email ID</label>
-                        <input type="email" id="email" placeholder="Enter Registered Email">
-                    </div>
-                    <button id="btnProceed" class="btn" onclick="sendOtp()" disabled>Proceed</button>
-                    
-                    <div id="otpSection" style="display: none; margin-top: 15px;">
-                        <div class="input-group">
-                            <label>Enter OTP</label>
-                            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
-                            <button class="btn" onclick="verifyOtp()">Verify & Proceed</button>
-                        </div>
-                    </div>
-                </div>
-                <div id="statusMessage" class="status-box"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let generatedOtp = null;
-        let userClassFromServer = null;
-
-        // Uses the new Render URL with backticks for the variable
-        async function verifyEnrollment() {
-            const enrollNo = document.getElementById('enrollmentNo').value;
-            try {
-                const response = await fetch(`https://bomis-sports-backend.onrender.com/api/check-status/${enrollNo}`);
-                const data = await response.json();
-                if (data.verified) {
-                    document.getElementById('stepTwoArea').style.opacity = "1";
-                    document.getElementById('stepTwoArea').style.pointerEvents = "auto";
-                    document.getElementById('btnProceed').disabled = false;
-                    document.getElementById('statusMessage').innerText = "Enrollment Verified!";
-                    document.getElementById('statusMessage').style.color = "#4CAF50";
-                } else {
-                    alert("Enrollment Number not found.");
-                }
-            } catch (error) {
-                alert("Server Connection Error. Check if your Render service is Live.");
-            }
-        }
-
-        async function sendOtp() {
-            const enrollNo = document.getElementById('enrollmentNo').value;
-            const email = document.getElementById('email').value;
-            try {
-                const response = await fetch('https://bomis-sports-backend.onrender.com/api/verify-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enrollNo, email })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    generatedOtp = data.otp;
-                    userClassFromServer = data.studentClass;
-                    document.getElementById('otpSection').style.display = "block";
-                    alert("OTP sent to your email!");
-                } else {
-                    alert("Email verification failed. Ensure it matches our records.");
-                }
-            } catch (error) {
-                alert("Could not connect to server.");
-            }
-        }
-
-        function verifyOtp() {
-            const userEnteredOtp = document.getElementById('otpInput').value;
-            if (userEnteredOtp == generatedOtp && generatedOtp !== null) {
-                localStorage.setItem('userClass', userClassFromServer);
-                window.location.href = 'games.html';
+                localStorage.setItem('enrollmentNo', enrollNo);
+                localStorage.setItem('studentName', data.studentName);
+                localStorage.setItem('studentClass', data.studentClass);
             } else {
-                alert("Incorrect OTP. Please check your email.");
+                msg.style.color = "red";
+                msg.innerHTML = "Enrollment number not found.";
             }
+        } catch (error) {
+            msg.style.color = "red";
+            msg.innerHTML = "Server waking up... please try again in 30 seconds.";
         }
-    </script>
-</body>
-</html>
+    }
+
+    async function sendOtp() {
+        const enrollNo = document.getElementById('enrollmentNo').value;
+        const email = document.getElementById('email').value;
+        const msg = document.getElementById('statusMessage');
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enrollNo, email })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                generatedOtp = Math.floor(100000 + Math.random() * 900000);
+                alert("TESTING OTP: " + generatedOtp); 
+                document.getElementById('otpSection').style.display = "block";
+                msg.innerHTML = "OTP Sent!";
+            } else {
+                msg.innerHTML = data.message;
+            }
+        } catch (error) {
+            msg.innerHTML = "Error sending OTP.";
+        }
+    }
+
+    function verifyOtp() {
+        const userOtp = document.getElementById('otpInput').value;
+        if (userOtp == generatedOtp) {
+            window.location.href = "sports-selection.html";
+        } else {
+            alert("Invalid OTP");
+        }
+    }
+</script>
