@@ -1,124 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOMIS SPORTS SELECTION 2026-27</title>
+const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+
+// 1. Function to update the Live Count sidebar
+async function updateLiveCounts() {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/live-counts`);
+        if (!res.ok) throw new Error("Backend not responding");
+        const counts = await res.json();
+        
+        const statsHtml = `
+            <p>Chess: ${counts.chess}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
+            <p>Table Tennis: ${counts.tt}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.tt/30)*100}%"></div></div>
+            <p>Cricket: ${counts.cricket}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.cricket/30)*100}%"></div></div>
+            <p>Football: ${counts.football}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.football/30)*100}%"></div></div>
+        `;
+        const container = document.getElementById('stats-container');
+        if (container) container.innerHTML = statsHtml;
+    } catch (e) {
+        console.error("Dashboard error:", e);
+        const container = document.getElementById('stats-container');
+        if (container) container.innerHTML = "<p style='color:orange;'>Updating counts...</p>";
+    }
+}
+
+// 2. Function to submit the selection
+async function submitSelection() {
+    const indoor = document.querySelector('input[name="indoor"]:checked');
+    const outdoor = document.querySelector('input[name="outdoor"]:checked');
+
+    if (!indoor || !outdoor) {
+        alert("Please select both an Indoor and an Outdoor game!");
+        return;
+    }
+
+    const enrollment_no = localStorage.getItem('enrollment_no');
     
-    <script>
-        // 1. Direct Access Guard
-        const enrollmentNo = localStorage.getItem('enrollment_no');
-        if (!enrollmentNo) {
-            window.location.href = "index.html";
+    // UI Feedback
+    const mainUi = document.getElementById('main-ui');
+    const originalContent = mainUi.innerHTML;
+    mainUi.innerHTML = "<h3>Saving your selection... Please wait.</h3>";
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                enrollment_no: enrollment_no,
+                indoor_game: indoor.value,
+                outdoor_game: outdoor.value
+            })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            localStorage.clear(); // End session
+            mainUi.innerHTML = `
+                <div style="text-align:center; padding: 20px;">
+                    <h2 style="color: #4CAF50;">Success! ✅</h2>
+                    <p>Your selection has been recorded.</p>
+                    <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="margin-top:20px; padding:10px 20px; background:#FF8C00; color:white; border:none; border-radius:5px; cursor:pointer;">Go to Home</button>
+                </div>`;
+            updateLiveCounts(); // Refresh the sidebar
+        } else {
+            alert("Error: " + (result.message || "Could not save."));
+            mainUi.innerHTML = originalContent;
         }
+    } catch (e) {
+        alert("Connection failed. Check if backend is live.");
+        mainUi.innerHTML = originalContent;
+    }
+}
 
-        // 2. Session Timer (2 Minutes)
-        setTimeout(() => {
-            alert("Session expired! Please login again.");
-            localStorage.clear();
-            window.location.href = "index.html";
-        }, 120000);
-    </script>
-
-    <style>
-        body {
-            background-color: #002147;
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            text-align: center;
-        }
-        header { background-color: #FF8C00; padding: 20px; margin-bottom: 30px; }
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-            flex-wrap: wrap;
-        }
-        .selection-box {
-            background: white;
-            color: #333;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 600px;
-            width: 100%;
-            text-align: left;
-        }
-        .live-dashboard {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #FF8C00;
-            width: 300px;
-            text-align: left;
-        }
-        .options { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; }
-        .submit-btn {
-            background: #FF8C00;
-            color: white;
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        .progress-bar { background: #444; height: 10px; border-radius: 5px; margin: 5px 0 15px 0; }
-        .progress-fill { background: #FF8C00; height: 100%; border-radius: 5px; transition: width 0.5s; }
-        .home-btn { 
-            background: #FF8C00; color: white; padding: 12px 25px; 
-            border: none; border-radius: 5px; cursor: pointer; font-weight: bold; 
-        }
-    </style>
-</head>
-<body onload="updateLiveCounts()">
-    <header><h1>BOMIS Sports Selection 2026-27</h1></header>
-
-    <div class="container">
-        <div class="selection-box" id="main-ui">
-            <h3>Indoor Games</h3>
-            <div class="options">
-                <label><input type="radio" name="indoor" value="Chess"> Chess</label>
-                <label><input type="radio" name="indoor" value="Table Tennis"> Table Tennis</label>
-            </div>
-
-            <h3 style="margin-top:20px;">Outdoor Games</h3>
-            <div class="options">
-                <label><input type="radio" name="outdoor" value="Cricket"> Cricket</label>
-                <label><input type="radio" name="outdoor" value="Football"> Football</label>
-            </div>
-
-            <button class="submit-btn" onclick="submitSelection()">Submit Selection</button>
-        </div>
-
-        <div class="live-dashboard">
-            <h3 style="color: #FF8C00; margin-bottom: 15px;">Live Availability</h3>
-            
-            <div id="stats-container">
-                <p>Loading counts...</p>
-                </div>
-        </div>
-    </div>
-
-    <script>
-        const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
-
-        // Function to fetch live counts from backend
-        async function updateLiveCounts() {
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/live-counts`);
-                const counts = await res.json(); 
-                
-                // Note: Ensure your backend has an endpoint /api/live-counts 
-                // that returns: { chess: 10, tt: 5, cricket: 20, football: 15 }
-                
-                const statsHtml = `
-                    <p>Chess: ${counts.chess}/30</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
-                    
-                    <p>Table Tennis: ${counts.tt}/30</p>
-                    <div class
-
+// Run on page load
+updateLiveCounts();
