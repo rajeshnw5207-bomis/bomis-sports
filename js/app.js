@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'rajesh.j@bomis-lbnagar.com',
-        pass: 'your-16-digit-app-password' // MUST BE THE 16-DIGIT APP PASSWORD
+        pass: 'tmuz msvd pixk bhcm' // MUST BE THE 16-DIGIT APP PASSWORD
     }
 });
 
@@ -96,3 +96,4 @@ app.post('/api/verify-email', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
