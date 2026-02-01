@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. UPDATED CORS: This allows your specific website to talk to the server
+// 1. UPDATED CORS: Explicitly allowing your GitHub Pages site
 app.use(cors({
     origin: 'https://rajeshnw5207-bomis.github.io',
     methods: ['GET', 'POST'],
@@ -21,23 +21,24 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Setup Nodemailer
+// 2. UPDATED NODEMAILER: Using Port 587 for better cloud compatibility
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // Use false for 587 (it will use STARTTLS)
     auth: {
         user: 'rajesh.j@bomis-lbnagar.com',
-        pass: 'tmuz msvd pixk bhcm' // Verified: This is your 16-digit App Password
+        pass: 'tmuz msvd pixk bhcm' 
     },
-    connectionTimeout: 10000 // 10 seconds timeout
+    tls: {
+        rejectUnauthorized: false // Helps avoid handshake errors on cloud servers
+    }
 });
 
 // 1. Enrollment Check Route
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
-        const enrollNo = req.params.enrollment_no.trim().toUpperCase(); // Make it uppercase
+        const enrollNo = req.params.enrollment_no.trim().toUpperCase();
         const result = await pool.query(
             'SELECT student_name, student_class, section FROM bomis_db WHERE enrollment_no = $1', 
             [enrollNo] 
@@ -55,7 +56,7 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
         }
     } catch (err) {
         console.error("Database Error:", err);
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({ error: "Database connection error." });
     }
 });
 
@@ -67,6 +68,7 @@ app.post('/api/verify-email', async (req, res) => {
         const enrollNo = enrollment_no.trim().toUpperCase();
         const studentEmail = email.trim().toLowerCase();
 
+        // Matching both Enrollment AND Email
         const result = await pool.query(
             'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = $2',
             [enrollNo, studentEmail]
@@ -88,23 +90,24 @@ app.post('/api/verify-email', async (req, res) => {
                         <div style="text-align: center; font-size: 36px; font-weight: bold; background: #fdf2e9; padding: 20px; border-radius: 8px; color: #002347; letter-spacing: 5px;">
                             ${otp}
                         </div>
-                        <p style="margin-top: 20px; color: #666; font-size: 14px; text-align: center;">This code will allow you to proceed to the game selection page.</p>
+                        <p style="margin-top: 20px; color: #666; font-size: 14px; text-align: center;">Enter this on the website to proceed.</p>
                     </div>
                 `
             };
 
             await transporter.sendMail(mailOptions);
+            console.log(`Email sent successfully to ${studentEmail}`);
             res.json({ success: true, otp: otp }); 
 
         } else {
-            res.status(400).json({ success: false, message: "Email mismatch. Please use your registered school email." });
+            res.status(400).json({ success: false, message: "Email mismatch. Use your registered school email." });
         }
     } catch (err) {
-        console.error("Nodemailer Error:", err);
-        res.status(500).json({ success: false, error: "Email system error." });
+        console.error("System Error details:", err);
+        res.status(500).json({ success: false, error: "The server could not send the email. Please try again." });
     }
 });
 
-// IMPORTANT: Bind to 0.0.0.0 for Render
+// Binding to 0.0.0.0 is critical for Render to detect the port
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Backend Active on Port ${PORT}`));
