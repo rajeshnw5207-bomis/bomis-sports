@@ -1,76 +1,62 @@
-let generatedOtp = null;
-let otpTimer = null;
+const express = require('express');
+const { Pool } = require('pg');
+const cors = require('cors');
+require('dotenv').config();
 
-async function verifyEnrollment() {
-    const enrollNo = document.getElementById('enrollmentNo').value;
-    const msg = document.getElementById('statusMessage');
-    const stepTwo = document.getElementById('stepTwoArea');
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    try {
-        const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/check-status/${enrollNo}`, {
-            headers: { "ngrok-skip-browser-warning": "true" }
-        });
-        const data = await response.json();
-
-        if (data.verified) {
-            msg.style.color = "green";
-            msg.innerHTML = "Enrollment Verified!";
-            stepTwo.style.opacity = "1";
-            stepTwo.style.pointerEvents = "all";
-            // This line only works if the ID in HTML is 'btnProceed'
-            document.getElementById('btnProceed').disabled = false;
-        } else {
-            msg.style.color = "red";
-            msg.innerHTML = "Enrollment number not found.";
-        }
-    } catch (error) {
-        msg.innerHTML = "Connection error. Is VS Code running?";
+// Database Connection with SSL for Supabase
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
     }
-}
+});
 
-async function sendOtp() {
-    const enrollNo = document.getElementById('enrollmentNo').value;
-    const email = document.getElementById('email').value;
-    const msg = document.getElementById('statusMessage');
-
-    msg.innerHTML = "Verifying email...";
-
+// Check if student exists
+app.get('/api/check-status/:enrollNo', async (req, res) => {
     try {
-        const response = await fetch(`https://arlean-oleoyl-obeisantly.ngrok-free.dev/api/verify-email`, {
-            method: 'POST',
-            headers: { 
-                "Content-Type": "application/json",
-                "ngrok-skip-browser-warning": "true" 
-            },
-            body: JSON.stringify({ enrollNo, email })
-        });
+        const { enrollNo } = req.params;
+        const result = await pool.query(
+            'SELECT name, student_class FROM students WHERE enrollment_no = $1', 
+            [enrollNo]
+        );
 
-        const data = await response.json();
-
-        if (data.success) {
-            generatedOtp = Math.floor(100000 + Math.random() * 900000);
-            console.log("TESTING OTP:", generatedOtp); 
-            
-            document.getElementById('otpSection').style.display = "block";
-            
-            let timeLeft = 120;
-            clearInterval(otpTimer);
-            otpTimer = setInterval(() => {
-                timeLeft--;
-                msg.style.color = "green";
-                msg.innerHTML = `OTP sent! Valid for ${timeLeft}s`;
-                if (timeLeft <= 0) {
-                    clearInterval(otpTimer);
-                    generatedOtp = null;
-                    msg.innerHTML = "OTP Expired. Please try again.";
-                    msg.style.color = "red";
-                }
-            }, 1000);
+        if (result.rows.length > 0) {
+            res.json({ 
+                verified: true, 
+                studentName: result.rows[0].name,
+                studentClass: result.rows[0].student_class 
+            });
         } else {
-            msg.style.color = "red";
-            msg.innerHTML = data.message || "Email mismatch.";
+            res.json({ verified: false });
         }
-    } catch (error) {
-        msg.innerHTML = "Server connection error.";
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
     }
-}
+});
+
+// Verify email and enrollment match
+app.post('/api/verify-email', async (req, res) => {
+    const { enrollNo, email } = req.body;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM students WHERE enrollment_no = $1 AND email = $2',
+            [enrollNo, email]
+        );
+
+        if (result.rows.length > 0) {
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, message: "Email does not match our records." });
+        }
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
