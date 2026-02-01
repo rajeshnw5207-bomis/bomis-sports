@@ -1,78 +1,59 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-require('dotenv').config();
+// Replace your existing <script> section in games.html with this:
 
-const app = express();
-const otpStore = {}; // Temporary storage for OTP timestamps
+const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
-app.use(cors({
-    origin: 'https://rajeshnw5207-bomis.github.io',
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
-
-app.use(express.json());
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// Route 1: Verify Enrollment & Check if already submitted
-app.get('/api/check-status/:enrollment_no', async (req, res) => {
+// RUN THIS ON PAGE LOAD
+async function updateLiveCounts() {
     try {
-        const enrollNo = req.params.enrollment_no.trim().toUpperCase();
-        const result = await pool.query(
-            'SELECT student_name, indoor_selection FROM bomis_db WHERE enrollment_no = $1', [enrollNo]
-        );
+        const res = await fetch(`${BACKEND_URL}/api/live-counts`);
+        const counts = await res.json();
+        
+        const statsHtml = `
+            <p>Chess: ${counts.chess}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
+            
+            <p>Table Tennis: ${counts.tt}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.tt/30)*100}%"></div></div>
+            
+            <p>Cricket: ${counts.cricket}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.cricket/30)*100}%"></div></div>
+            
+            <p>Football: ${counts.football}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.football/30)*100}%"></div></div>
+        `;
+        document.getElementById('stats-container').innerHTML = statsHtml;
+    } catch (e) {
+        document.getElementById('stats-container').innerHTML = "<p>Error loading live data.</p>";
+    }
+}
 
-        if (result.rows.length > 0) {
-            if (result.rows[0].indoor_selection) {
-                return res.json({ verified: true, alreadyDone: true, studentName: result.rows[0].student_name });
-            }
-            res.json({ verified: true, alreadyDone: false, studentName: result.rows[0].student_name });
-        } else {
-            res.json({ verified: false });
-        }
-    } catch (err) { res.status(500).json({ error: "DB Error" }); }
-});
+// Call the function immediately
+updateLiveCounts();
 
-// Route 2: Email Match & 2-Minute OTP
-app.post('/api/verify-email', async (req, res) => {
-    const { enrollment_no, email } = req.body;
-    const enrollNo = enrollment_no.trim().toUpperCase();
+async function submitSelection() {
+    const indoor = document.querySelector('input[name="indoor"]:checked');
+    const outdoor = document.querySelector('input[name="outdoor"]:checked');
+
+    if(!indoor || !outdoor) return alert("Select both!");
+
+    const data = {
+        enrollment_no: localStorage.getItem('enrollment_no'),
+        indoor_game: indoor.value,
+        outdoor_game: outdoor.value
+    };
+
     try {
-        const result = await pool.query(
-            'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = $2',
-            [enrollNo, email.trim().toLowerCase()]
-        );
-
-        if (result.rows.length > 0) {
-            const otp = Math.floor(100000 + Math.random() * 900000);
-            otpStore[enrollNo] = Date.now() + 120000; // Valid for 2 mins
-            res.json({ success: true, otp: otp }); 
-        } else {
-            res.status(400).json({ success: false, message: "Email mismatch." });
+        const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if(result.success) {
+            alert("Selection Saved!");
+            window.location.href = "https://bomis-lbnagar.com/";
         }
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// Route 3: Save Selection (Single Submission Only)
-app.post('/api/save-selection', async (req, res) => {
-    const { enrollment_no, indoor, outdoor } = req.body;
-    try {
-        const check = await pool.query('SELECT indoor_selection FROM bomis_db WHERE enrollment_no = $1', [enrollment_no]);
-        if (check.rows[0].indoor_selection) {
-            return res.status(400).json({ success: false, message: "Response already recorded!" });
-        }
-        await pool.query(
-            'UPDATE bomis_db SET indoor_selection = $1, outdoor_selection = $2, selection_time = NOW() WHERE enrollment_no = $3',
-            [indoor, outdoor, enrollment_no]
-        );
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Active on ${PORT}`));
+    } catch (e) {
+        alert("Submission failed. Check backend status.");
+    }
+}
