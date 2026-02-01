@@ -49,19 +49,19 @@
         let generatedOtp = null;
 
         async function verifyEnrollment() {
-            const enrollNo = document.getElementById('enrollmentNo').value.trim();
+            const enollment_no = document.getElementById('enollment_no').value.trim();
             const msg = document.getElementById('statusMessage');
-            if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
+            if(!enollment_no) { alert("Please enter Enrollment Number"); return; }
             msg.innerHTML = "Verifying...";
             try {
                 // FIXED: URL matches the backend route exactly
-                const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+                const response = await fetch(`${BACKEND_URL}/api/check-status/${enollment_no}`);
                 const data = await response.json();
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = "Enrollment Verified! Please enter email.";
                     document.getElementById('stepTwoArea').style.display = "block";
-                    localStorage.setItem('enrollmentNo', enrollNo);
+                    localStorage.setItem('enollment_no', enollment_no);
                 } else {
                     msg.style.color = "#FF5252";
                     msg.innerHTML = "Enrollment not found.";
@@ -71,12 +71,12 @@
 
         async function sendOtp() {
             const email = document.getElementById('email').value.trim();
-            const enrollNo = localStorage.getItem('enrollmentNo');
+            const enollment_no = localStorage.getItem('enollment_no');
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ enrollNo, email })
+                    body: JSON.stringify({ enollment_no, email })
                 });
                 const data = await response.json();
                 if (data.success) {
@@ -95,4 +95,5 @@
     </script>
 </body>
 </html>
+
 
