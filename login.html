@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOMIS Sports Selection</title>
     <style>
-        /* COLOR CODES ARE HERE */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background-color: #fff; }
         
-        /* IMAGE URL IS HERE */
         .left-side { 
             flex: 1.2; 
             background: url('images/school.jpeg') no-repeat center center; 
             background-size: cover; 
-            background-color: #f0f0f0; /* Backup color if image fails */
+            background-color: #f0f0f0; 
         }
         
         .right-side { 
             flex: 0.8; 
-            background-color: #002347; /* Dark Blue */
+            background-color: #002347; 
             color: white; 
             display: flex; 
             flex-direction: column; 
@@ -28,7 +26,7 @@
         }
         
         h1 { font-size: 2.5rem; margin-bottom: 25px; }
-        h1 span { color: #FF9100; /* BOMIS Orange */ }
+        h1 span { color: #FF9100; }
         
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; color: #ccc; }
@@ -45,11 +43,7 @@
         }
         
         .btn-verify:hover { background-color: #e68200; }
-        
-        .btn-verify:disabled { 
-            background-color: #2c3e50 !important; 
-            cursor: not-allowed; opacity: 0.8; 
-        }
+        .btn-verify:disabled { background-color: #2c3e50 !important; cursor: not-allowed; opacity: 0.8; }
         
         #statusMessage { margin: 15px 0; font-size: 0.95rem; min-height: 20px; font-weight: bold; }
         #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
@@ -85,7 +79,6 @@
     </div>
 
     <script>
-        // YOUR BACKEND LOGIC
         const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
         let generatedOtp = null;
 
@@ -99,7 +92,7 @@
             
             enrollBtn.disabled = true;
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Checking database...";
+            msg.innerHTML = "Connecting to server...";
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
@@ -117,8 +110,9 @@
                     enrollBtn.disabled = false;
                 }
             } catch (e) { 
+                console.error("Enrollment Error:", e);
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Server waking up. Please wait 30s.";
+                msg.innerHTML = "Server is waking up. Please wait 30s and try again.";
                 enrollBtn.disabled = false;
             }
         }
@@ -129,31 +123,45 @@
             const sendBtn = document.getElementById('sendOtpBtn');
             
             if(!emailInput) { alert("Please enter email"); return; }
+            
             sendBtn.disabled = true;
-            sendBtn.innerHTML = "Sending...";
+            sendBtn.innerHTML = "Sending Email...";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
+                    mode: 'cors', // Crucial for Render -> GitHub communication
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ enrollment_no, email: emailInput })
                 });
+                
                 const data = await response.json();
+                
                 if (data.success) {
                     generatedOtp = data.otp;
-                    alert("OTP Sent!");
+                    alert("Success! OTP sent to your school email.");
                     document.getElementById('otpSection').style.display = "block";
+                    sendBtn.innerHTML = "OTP Sent";
                 } else {
-                    alert(data.message || "Error");
+                    alert(data.message || "Email mismatch. Check your registered email.");
                     sendBtn.disabled = false;
+                    sendBtn.innerHTML = "Send OTP";
                 }
-            } catch (e) { alert("Server error"); sendBtn.disabled = false; }
+            } catch (e) { 
+                console.error("OTP Error:", e);
+                alert("Server busy or connection failed. Try again in a moment.");
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = "Send OTP";
+            }
         }
 
         function verifyOtp() {
-            if (document.getElementById('otpInput').value.trim() == generatedOtp) {
+            const inputOtp = document.getElementById('otpInput').value.trim();
+            if (inputOtp == generatedOtp) {
                 window.location.href = "games.html";
-            } else { alert("Invalid OTP"); }
+            } else { 
+                alert("Invalid OTP. Please check your email."); 
+            }
         }
     </script>
 </body>
