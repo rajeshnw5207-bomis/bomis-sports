@@ -1,3 +1,11 @@
+// Check if the student has verified their enrollment
+const enrollmentNo = localStorage.getItem('enrollment_no');
+
+if (!enrollmentNo) {
+    // If no enrollment number is found, kick them back to the login page
+    alert("Please login first!");
+    window.location.href = "login.html";
+}
 <!DOCTYPE html>
 <html lang="en">
     <style>
@@ -105,4 +113,5 @@
     </script>
 </body>
 </html>
+
 
