@@ -9,7 +9,10 @@ app.use(express.json());
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    max: 20, // This is the 'queue' that handles many students at once
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
 // 1. Enrollment Check
@@ -81,3 +84,4 @@ app.post('/api/save-selection', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server live on ${PORT}`));
+
