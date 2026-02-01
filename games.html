@@ -1,12 +1,12 @@
 const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
-// 1. Function to update the Live Count sidebar
 async function updateLiveCounts() {
     try {
         const res = await fetch(`${BACKEND_URL}/api/live-counts`);
-        if (!res.ok) throw new Error("Backend not responding");
+        if (!res.ok) throw new Error();
         const counts = await res.json();
         
+        // This ONLY works here in the HTML file, never in app.js
         const statsHtml = `
             <p>Chess: ${counts.chess}/30</p>
             <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
@@ -17,63 +17,41 @@ async function updateLiveCounts() {
             <p>Football: ${counts.football}/30</p>
             <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.football/30)*100}%"></div></div>
         `;
-        const container = document.getElementById('stats-container');
-        if (container) container.innerHTML = statsHtml;
+        document.getElementById('stats-container').innerHTML = statsHtml;
     } catch (e) {
-        console.error("Dashboard error:", e);
-        const container = document.getElementById('stats-container');
-        if (container) container.innerHTML = "<p style='color:orange;'>Updating counts...</p>";
+        document.getElementById('stats-container').innerHTML = "<p>Dashboard loading...</p>";
     }
 }
 
-// 2. Function to submit the selection
 async function submitSelection() {
     const indoor = document.querySelector('input[name="indoor"]:checked');
     const outdoor = document.querySelector('input[name="outdoor"]:checked');
 
-    if (!indoor || !outdoor) {
-        alert("Please select both an Indoor and an Outdoor game!");
-        return;
-    }
+    if (!indoor || !outdoor) return alert("Select both games!");
 
-    const enrollment_no = localStorage.getItem('enrollment_no');
-    
-    // UI Feedback
     const mainUi = document.getElementById('main-ui');
-    const originalContent = mainUi.innerHTML;
-    mainUi.innerHTML = "<h3>Saving your selection... Please wait.</h3>";
+    mainUi.innerHTML = "<h3>Saving your selection...</h3>";
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                enrollment_no: enrollment_no,
+                enrollment_no: localStorage.getItem('enrollment_no'),
                 indoor_game: indoor.value,
                 outdoor_game: outdoor.value
             })
         });
-
         const result = await res.json();
-
         if (result.success) {
-            localStorage.clear(); // End session
-            mainUi.innerHTML = `
-                <div style="text-align:center; padding: 20px;">
-                    <h2 style="color: #4CAF50;">Success! ✅</h2>
-                    <p>Your selection has been recorded.</p>
-                    <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="margin-top:20px; padding:10px 20px; background:#FF8C00; color:white; border:none; border-radius:5px; cursor:pointer;">Go to Home</button>
-                </div>`;
-            updateLiveCounts(); // Refresh the sidebar
-        } else {
-            alert("Error: " + (result.message || "Could not save."));
-            mainUi.innerHTML = originalContent;
+            localStorage.clear();
+            mainUi.innerHTML = "<h2>Success! ✅</h2><button onclick='location.href=\"https://bomis-lbnagar.com/\"'>Home</button>";
+            updateLiveCounts();
         }
     } catch (e) {
-        alert("Connection failed. Check if backend is live.");
-        mainUi.innerHTML = originalContent;
+        alert("Connection failed. Check backend.");
+        location.reload();
     }
 }
 
-// Run on page load
 updateLiveCounts();
