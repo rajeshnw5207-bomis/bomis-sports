@@ -8,12 +8,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background-color: #fff; }
         
-        /* Fixed: Points to your GitHub images folder */
+        /* Left Side: Points to your actual GitHub images folder */
         .left-side { 
             flex: 1.2; 
             background: url('images/school-building.jpg') no-repeat center center; 
             background-size: cover; 
-            background-color: #ddd; /* Fallback color */
+            background-color: #f0f0f0;
         }
         
         .right-side { 
@@ -33,28 +33,19 @@
         label { display: block; margin-bottom: 8px; color: #ccc; }
         
         input { 
-            width: 100%; 
-            padding: 14px; 
-            border: none; 
-            border-radius: 4px; 
-            font-size: 1rem; 
-            margin-bottom: 10px; 
+            width: 100%; padding: 14px; border: none; border-radius: 4px; 
+            font-size: 1rem; margin-bottom: 10px; color: #333;
         }
 
         .btn-verify { 
-            width: 100%; 
-            padding: 15px; 
-            background-color: #FF9100; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            cursor: pointer; 
+            width: 100%; padding: 15px; background-color: #FF9100; 
+            color: white; border: none; border-radius: 4px; 
+            font-weight: bold; cursor: pointer; font-size: 1rem;
         }
 
-        #statusMessage { margin: 15px 0; font-size: 0.95rem; color: #FF9100; }
+        #statusMessage { margin: 15px 0; font-size: 0.95rem; color: #FF9100; min-height: 20px; }
         
-        /* Email and OTP sections stay hidden until verified */
+        /* Hidden initially, appears after enrollment is verified */
         #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
     </style>
 </head>
@@ -106,7 +97,7 @@
 
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = "Success! Now enter your email.";
+                    msg.innerHTML = "Enrollment Verified! Please enter email.";
                     stepTwo.style.display = "block";
                     localStorage.setItem('enrollmentNo', enrollNo);
                 } else {
@@ -114,7 +105,7 @@
                     msg.innerHTML = "Enrollment not found.";
                 }
             } catch (e) {
-                msg.innerHTML = "Server waking up... try again in 30s.";
+                msg.innerHTML = "Server waking up... please try again in 30 seconds.";
             }
         }
 
@@ -130,12 +121,12 @@
                 const data = await response.json();
                 if (data.success) {
                     generatedOtp = Math.floor(100000 + Math.random() * 900000);
-                    alert("OTP: " + generatedOtp);
+                    alert("YOUR OTP: " + generatedOtp);
                     document.getElementById('otpSection').style.display = "block";
                 } else {
                     alert("Email mismatch.");
                 }
-            } catch (e) { alert("Error connecting."); }
+            } catch (e) { alert("Connection Error"); }
         }
 
         function verifyOtp() {
