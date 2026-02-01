@@ -26,4 +26,62 @@
                 document.getElementById('stepTwoArea').style.display = "block";
                 
                 sendBtn.disabled = false;
-                localStorage.
+                localStorage.setItem('enrollment_no', enrollNo);
+            } else {
+                msg.style.color = "#FF5252";
+                msg.innerHTML = "Enrollment not found. Please check the number.";
+                enrollBtn.disabled = false;
+            }
+        } catch (e) { 
+            msg.style.color = "#FF5252";
+            msg.innerHTML = "Server is waking up. Please wait 30 seconds and try again.";
+            enrollBtn.disabled = false;
+        }
+    }
+
+    async function sendOtp() {
+        const emailInput = document.getElementById('email').value.trim();
+        const enrollment_no = localStorage.getItem('enrollment_no');
+        const sendBtn = document.getElementById('sendOtpBtn');
+        
+        if(!emailInput) { alert("Please enter your email"); return; }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = "Sending Email...";
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enrollment_no, email: emailInput })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                generatedOtp = data.otp; 
+                alert("Success! Check your @bomis-lbnagar.com inbox for the OTP.");
+                document.getElementById('otpSection').style.display = "block";
+                sendBtn.innerHTML = "OTP Sent";
+            } else { 
+                alert(data.message || "Email mismatch. Use your school email."); 
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = "Send OTP";
+            }
+        } catch (e) { 
+            alert("Error sending email. The server might be busy.");
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = "Send OTP";
+        }
+    }
+
+    function verifyOtp() {
+        const inputOtp = document.getElementById('otpInput').value.trim();
+        // Simple client-side check against the OTP returned by your Nodemailer route
+        if (inputOtp == generatedOtp) {
+            window.location.href = "games.html";
+        } else { 
+            alert("Invalid OTP. Please check your email again."); 
+        }
+    }
+</script>
