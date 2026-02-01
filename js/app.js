@@ -57,7 +57,7 @@ app.post('/api/verify-email', async (req, res) => {
             console.log(`Sending OTP to: ${email}`);
 
             const { data, error } = await resend.emails.send({
-                from: 'BOMIS Sports <onboarding@resend.dev>',
+                from: 'BOMIS Sports <noreply@bomis-lbnagar.com>',
                 to: email,
                 subject: 'Your Sports Selection OTP',
                 html: `<p>Hello ${studentName}, your verification code is <strong>${otp}</strong>.</p>`
@@ -80,4 +80,5 @@ app.post('/api/verify-email', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
