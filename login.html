@@ -47,6 +47,23 @@
         
         #statusMessage { margin: 15px 0; font-size: 0.95rem; min-height: 20px; font-weight: bold; }
         #stepTwoArea, #otpSection { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
+
+        /* Style for the On-Screen OTP Box */
+        .otp-display-box {
+            background: #FFF3E0; 
+            padding: 15px; 
+            border: 2px solid #FF9100; 
+            border-radius: 8px; 
+            margin-top: 10px; 
+            text-align: center;
+        }
+        .otp-code {
+            font-size: 32px; 
+            color: #002347; 
+            letter-spacing: 5px; 
+            margin: 5px 0;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -65,13 +82,13 @@
             <div class="form-group">
                 <label>Registered Email ID</label>
                 <input type="email" id="email" placeholder="Enter Registered Email">
-                <button id="sendOtpBtn" class="btn-verify" onclick="sendOtp()" disabled>Send OTP</button>
+                <button id="sendOtpBtn" class="btn-verify" onclick="sendOtp()" disabled>Verify Email</button>
             </div>
         </div>
 
         <div id="otpSection">
             <div class="form-group">
-                <label>Enter 6-digit OTP</label>
+                <label>Enter the Code Shown Above</label>
                 <input type="text" id="otpInput" maxlength="6" placeholder="000000">
                 <button class="btn-verify" onclick="verifyOtp()">Proceed to Selection</button>
             </div>
@@ -86,7 +103,6 @@
             const enrollNo = document.getElementById('enrollment_no').value.trim().toUpperCase();
             const msg = document.getElementById('statusMessage');
             const enrollBtn = document.getElementById('verifyEnrollBtn');
-            const sendBtn = document.getElementById('sendOtpBtn');
             
             if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
             
@@ -102,7 +118,7 @@
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = `Welcome, ${data.studentName}! Please enter your email.`;
                     document.getElementById('stepTwoArea').style.display = "block";
-                    sendBtn.disabled = false;
+                    document.getElementById('sendOtpBtn').disabled = false;
                     localStorage.setItem('enrollment_no', enrollNo);
                 } else {
                     msg.style.color = "#FF5252";
@@ -110,9 +126,8 @@
                     enrollBtn.disabled = false;
                 }
             } catch (e) { 
-                console.error("Enrollment Error:", e);
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Server is waking up. Please wait 30s and try again.";
+                msg.innerHTML = "Server waking up. Please wait 30s.";
                 enrollBtn.disabled = false;
             }
         }
@@ -121,16 +136,16 @@
             const emailInput = document.getElementById('email').value.trim();
             const enrollment_no = localStorage.getItem('enrollment_no');
             const sendBtn = document.getElementById('sendOtpBtn');
+            const msg = document.getElementById('statusMessage');
             
             if(!emailInput) { alert("Please enter email"); return; }
             
             sendBtn.disabled = true;
-            sendBtn.innerHTML = "Sending Email...";
+            sendBtn.innerHTML = "Verifying Details...";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
-                    mode: 'cors', // Crucial for Render -> GitHub communication
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ enrollment_no, email: emailInput })
                 });
@@ -138,31 +153,10 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    generatedOtp = data.otp;
-                    alert("Success! OTP sent to your school email.");
-                    document.getElementById('otpSection').style.display = "block";
-                    sendBtn.innerHTML = "OTP Sent";
-                } else {
-                    alert(data.message || "Email mismatch. Check your registered email.");
-                    sendBtn.disabled = false;
-                    sendBtn.innerHTML = "Send OTP";
-                }
-            } catch (e) { 
-                console.error("OTP Error:", e);
-                alert("Server busy or connection failed. Try again in a moment.");
-                sendBtn.disabled = false;
-                sendBtn.innerHTML = "Send OTP";
-            }
-        }
-
-        function verifyOtp() {
-            const inputOtp = document.getElementById('otpInput').value.trim();
-            if (inputOtp == generatedOtp) {
-                window.location.href = "games.html";
-            } else { 
-                alert("Invalid OTP. Please check your email."); 
-            }
-        }
-    </script>
-</body>
-</html>
+                    generatedOtp = data.otp; // The OTP returned by the server
+                    
+                    // Display the code on the screen instead of asking them to check email
+                    msg.innerHTML = `
+                        <div class="otp-display-box">
+                            <p style="color: #333; font-weight: bold;">Your Verification Code:</p>
+                            <div class
