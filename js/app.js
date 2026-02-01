@@ -12,12 +12,11 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// 1. Route to check enrollment status
+// FIXED: Table name is 'bomis_db', columns match your Supabase screenshot
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const { enrollment_no } = req.params; 
         const result = await pool.query(
-            // FIXED: Changed 'students' to 'bomis_db' to match your Supabase table
             'SELECT student_name, student_class, section FROM bomis_db WHERE enrollment_no = $1', 
             [enrollment_no] 
         );
@@ -33,18 +32,15 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
             res.json({ verified: false });
         }
     } catch (err) {
-        console.error("Query Error:", err);
+        console.error("Database Error:", err);
         res.status(500).json({ error: "Database error" });
     }
 });
 
-// 2. Route to verify email match
 app.post('/api/verify-email', async (req, res) => {
-    // FIXED: Corrected spelling to enrollment_no
     const { enrollment_no, email } = req.body;
     try {
         const result = await pool.query(
-            // FIXED: Changed 'students' to 'bomis_db'
             'SELECT * FROM bomis_db WHERE enrollment_no = $1 AND email = $2',
             [enrollment_no, email]
         );
@@ -54,7 +50,6 @@ app.post('/api/verify-email', async (req, res) => {
             res.json({ success: false });
         }
     } catch (err) {
-        console.error("Email Verify Error:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
