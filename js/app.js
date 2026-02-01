@@ -12,12 +12,13 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// FIXED: Using 'enrollment_no' to match your database exactly
+// 1. Route to check enrollment status
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const { enrollment_no } = req.params; 
         const result = await pool.query(
-            'SELECT student_name, student_class, section FROM students WHERE enrollment_no = $1', 
+            // FIXED: Changed 'students' to 'bomis_db' to match your Supabase table
+            'SELECT student_name, student_class, section FROM bomis_db WHERE enrollment_no = $1', 
             [enrollment_no] 
         );
 
@@ -37,12 +38,15 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
     }
 });
 
+// 2. Route to verify email match
 app.post('/api/verify-email', async (req, res) => {
-    const { enollment_no, email } = req.body;
+    // FIXED: Corrected spelling to enrollment_no
+    const { enrollment_no, email } = req.body;
     try {
         const result = await pool.query(
-            'SELECT * FROM students WHERE enrollment_no = $1 AND email = $2',
-            [enollment_no, email]
+            // FIXED: Changed 'students' to 'bomis_db'
+            'SELECT * FROM bomis_db WHERE enrollment_no = $1 AND email = $2',
+            [enrollment_no, email]
         );
         if (result.rows.length > 0) {
             res.json({ success: true });
@@ -50,10 +54,10 @@ app.post('/api/verify-email', async (req, res) => {
             res.json({ success: false });
         }
     } catch (err) {
+        console.error("Email Verify Error:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
