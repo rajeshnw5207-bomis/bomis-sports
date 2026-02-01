@@ -1,31 +1,38 @@
 const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
-// Updates the sidebar UI
+// 1. Fetch and Display Live Counts
 async function updateLiveCounts() {
     try {
         const res = await fetch(`${BACKEND_URL}/api/live-counts`);
+        if (!res.ok) throw new Error("Server response error");
+        
         const counts = await res.json();
         
+        // Ensure keys match the backend JSON exactly
         const statsHtml = `
-            <p>Chess: ${counts.chess}/30</p>
-            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
-            <p>Table Tennis: ${counts.tt}/30</p>
-            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.tt/30)*100}%"></div></div>
-            <p>Cricket: ${counts.cricket}/30</p>
-            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.cricket/30)*100}%"></div></div>
-            <p>Football: ${counts.football}/30</p>
-            <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.football/30)*100}%"></div></div>
+            <p>Chess: ${counts.chess || 0}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${((counts.chess || 0)/30)*100}%"></div></div>
+            <p>Table Tennis: ${counts.tt || 0}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${((counts.tt || 0)/30)*100}%"></div></div>
+            <p>Cricket: ${counts.cricket || 0}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${((counts.cricket || 0)/30)*100}%"></div></div>
+            <p>Football: ${counts.football || 0}/30</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${((counts.football || 0)/30)*100}%"></div></div>
         `;
         document.getElementById('stats-container').innerHTML = statsHtml;
     } catch (e) {
         console.error("Dashboard error:", e);
+        document.getElementById('stats-container').innerHTML = "<p style='color:orange;'>Backend waking up... Please wait.</p>";
+        // Retry once after 5 seconds if it fails
+        setTimeout(updateLiveCounts, 5000);
     }
 }
 
-// Saves choices and ends session
+// 2. Submit Logic
 async function submitSelection() {
     const indoor = document.querySelector('input[name="indoor"]:checked');
     const outdoor = document.querySelector('input[name="outdoor"]:checked');
+    const enrollment = localStorage.getItem('enrollment_no');
 
     if (!indoor || !outdoor) {
         alert("Please select both games!");
@@ -33,6 +40,7 @@ async function submitSelection() {
     }
 
     const mainUi = document.getElementById('main-ui');
+    const originalContent = mainUi.innerHTML;
     mainUi.innerHTML = "<h3>Saving your selection... Please wait.</h3>";
 
     try {
@@ -40,14 +48,16 @@ async function submitSelection() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                enrollment_no: localStorage.getItem('enrollment_no'),
+                enrollment_no: enrollment,
                 indoor_game: indoor.value,
                 outdoor_game: outdoor.value
             })
         });
+
         const result = await res.json();
+
         if (result.success) {
-            localStorage.clear();
+            localStorage.clear(); // Clear session on success
             mainUi.innerHTML = `
                 <div style="text-align:center; padding:20px;">
                     <h2 style="color:#4CAF50;">Success! ✅</h2>
@@ -56,14 +66,14 @@ async function submitSelection() {
                 </div>`;
             updateLiveCounts();
         } else {
-            alert("Could not save selection.");
-            location.reload();
+            alert("Error: " + (result.message || "Could not save."));
+            mainUi.innerHTML = originalContent;
         }
     } catch (e) {
-        alert("Connection failed. Check backend status.");
-        location.reload();
+        alert("Connection failed. Check your internet or backend status.");
+        mainUi.innerHTML = originalContent;
     }
 }
 
-// Start counts on load
+// Initialize
 updateLiveCounts();
