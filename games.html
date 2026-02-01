@@ -1,82 +1,121 @@
-// Check if the student has verified their enrollment
-const enrollmentNo = localStorage.getItem('enrollment_no');
-
-if (!enrollmentNo) {
-    // If no enrollment number is found, kick them back to the login page
-    alert("Please login first!");
-    window.location.href = "login.html";
-}
 <!DOCTYPE html>
 <html lang="en">
-    <style>
-    body {
-        background-color: #002147; /* Deep Navy Blue */
-        color: white;
-        font-family: 'Segoe UI', sans-serif;
-        margin: 0;
-        text-align: center;
-    }
-    header {
-        background-color: #FF8C00; /* BOMIS Orange */
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    .container {
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        padding: 20px;
-    }
-    .selection-box {
-        background: white;
-        color: #333;
-        padding: 30px;
-        border-radius: 15px;
-        flex: 2;
-        text-align: left;
-    }
-    .live-dashboard {
-        background: rgba(255,255,255,0.1);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #FF8C00;
-        flex: 1;
-    }
-    .submit-btn {
-        background: #FF8C00;
-        color: white;
-        width: 100%;
-        padding: 15px;
-        border: none;
-        border-radius: 8px;
-        font-size: 18px;
-        cursor: pointer;
-        margin-top: 20px;
-    }
-</style>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BOMIS SPORTS SELECTION</title>
-    <link rel="stylesheet" href="css/style.css">
+    
+    <script>
+        const enrollmentNo = localStorage.getItem('enrollment_no');
+        if (!enrollmentNo) {
+            alert("Please login first!");
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #002147; /* Deep Navy Blue */
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            text-align: center;
+            overflow-x: hidden;
+        }
+        header {
+            background-color: #FF8C00; /* BOMIS Orange */
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+        .selection-box {
+            background: white;
+            color: #333;
+            padding: 35px;
+            border-radius: 15px;
+            flex: 2;
+            text-align: left;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .live-dashboard {
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #FF8C00;
+            flex: 1;
+            height: fit-content;
+        }
+        h3 { margin-bottom: 15px; color: #002147; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .live-dashboard h3 { color: #FF8C00; border-bottom-color: #333; }
+        
+        .options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        label { 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        label:hover { background: #fff5e6; border-color: #FF8C00; }
+        
+        .submit-btn {
+            background: #FF8C00;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        .submit-btn:hover { background: #e67e00; transform: translateY(-2px); }
+
+        /* Progress Bar Styles */
+        .progress-bar {
+            background: #222;
+            height: 10px;
+            border-radius: 5px;
+            margin: 8px 0 18px 0;
+            overflow: hidden;
+        }
+        .progress-fill { background: #FF8C00; height: 100%; transition: width 0.5s; }
+
+        @media (max-width: 900px) {
+            .container { flex-direction: column; }
+        }
+    </style>
 </head>
 <body>
-    <header><h1>Welcome to BOMIS SPORTS SELECTION</h1></header>
+    <header><h1>BOMIS Sports Selection</h1></header>
 
     <div class="container">
         <div class="selection-box" id="main-ui">
             <h3>Indoor Games (Select One)</h3>
             <div class="options">
-                <label><input type="radio" name="indoor" value="Chess" required> Chess</label>
+                <label><input type="radio" name="indoor" value="Chess"> Chess</label>
                 <label><input type="radio" name="indoor" value="Table Tennis"> Table Tennis</label>
+                <label><input type="radio" name="indoor" value="Carrom"> Carrom</label>
             </div>
 
             <h3 style="margin-top:20px;">Outdoor Games (Select One)</h3>
             <div class="options">
-                <label><input type="radio" name="outdoor" value="Cricket" required> Cricket</label>
+                <label><input type="radio" name="outdoor" value="Cricket"> Cricket</label>
                 <label><input type="radio" name="outdoor" value="Football"> Football</label>
+                <label><input type="radio" name="outdoor" value="Basketball"> Basketball</label>
             </div>
 
-            <button class="submit-btn" onclick="submitSelection()">Submit Selection</button>
+            <button class="submit-btn" onclick="submitSelection()">Submit Final Selection</button>
         </div>
 
         <div class="live-dashboard">
@@ -84,14 +123,21 @@ if (!enrollmentNo) {
             <div id="stats">
                 <p>Chess: 12/30</p>
                 <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+                
                 <p>Cricket: 28/30</p>
                 <div class="progress-bar"><div class="progress-fill" style="width: 93%"></div></div>
+                
+                <p>Football: 15/30</p>
+                <div class="progress-bar"><div class="progress-fill" style="width: 50%"></div></div>
             </div>
+            <p style="font-size: 12px; color: #aaa; margin-top: 20px;">*Slots are filled on a first-come, first-served basis.</p>
         </div>
     </div>
 
     <script>
-        function submitSelection() {
+        const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+
+        async function submitSelection() {
             const indoor = document.querySelector('input[name="indoor"]:checked');
             const outdoor = document.querySelector('input[name="outdoor"]:checked');
 
@@ -100,18 +146,51 @@ if (!enrollmentNo) {
                 return;
             }
 
-            document.getElementById('main-ui').innerHTML = `
-                <div style="text-align:center; padding: 40px;">
-                    <h2 style="color: #FF8C00;">Selection Successful! ✅</h2>
-                    <p><strong>Indoor:</strong> ${indoor.value}</p>
-                    <p><strong>Outdoor:</strong> ${outdoor.value}</p>
-                    <button onclick="window.location.reload()" style="margin-top:20px;">Change</button>
-                </div>
-            `;
+            // Prepare the data to send to your database
+            const selectionData = {
+                enrollment_no: localStorage.getItem('enrollment_no'),
+                indoor_game: indoor.value,
+                outdoor_game: outdoor.value
+            };
+
+            try {
+                // Change UI to loading state
+                document.getElementById('main-ui').innerHTML = "<h2 style='text-align:center;'>Saving your selection...</h2>";
+
+                // Sending the choice to the backend
+                // (Note: Make sure you have a POST route /api/save-selection in your app.js)
+                const response = await fetch(`${BACKEND_URL}/api/save-selection`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(selectionData)
+                });
+
+                const result = await response.json();
+
+                if(result.success) {
+                    document.getElementById('main-ui').innerHTML = `
+                        <div style="text-align:center; padding: 40px;">
+                            <h2 style="color: #4CAF50;">Selection Successful! ✅</h2>
+                            <p style="margin-top:15px;">Your choices have been recorded.</p>
+                            <div style="background:#f9f9f9; padding:20px; border-radius:10px; margin:20px 0; border: 1px solid #ddd;">
+                                <p><strong>Indoor:</strong> ${indoor.value}</p>
+                                <p><strong>Outdoor:</strong> ${outdoor.value}</p>
+                            </div>
+                            <p style="color: #666; font-size: 14px;">You can now close this window.</p>
+                            <button onclick="window.location.reload()" style="margin-top:20px; padding:10px 20px; cursor:pointer;">Edit Selection</button>
+                        </div>
+                    `;
+                } else {
+                    alert("Error saving selection: " + result.message);
+                    window.location.reload();
+                }
+
+            } catch (error) {
+                console.error("Submission Error:", error);
+                alert("Connection failed. Please check your internet and try again.");
+                window.location.reload();
+            }
         }
-        
     </script>
 </body>
 </html>
-
-
