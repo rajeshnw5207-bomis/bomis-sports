@@ -1,12 +1,11 @@
 const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
+// Updates the dashboard UI by fetching data from the backend
 async function updateLiveCounts() {
     try {
         const res = await fetch(`${BACKEND_URL}/api/live-counts`);
-        if (!res.ok) throw new Error();
         const counts = await res.json();
         
-        // This ONLY works here in the HTML file, never in app.js
         const statsHtml = `
             <p>Chess: ${counts.chess}/30</p>
             <div class="progress-bar"><div class="progress-fill" style="width: ${(counts.chess/30)*100}%"></div></div>
@@ -19,18 +18,16 @@ async function updateLiveCounts() {
         `;
         document.getElementById('stats-container').innerHTML = statsHtml;
     } catch (e) {
-        document.getElementById('stats-container').innerHTML = "<p>Dashboard loading...</p>";
+        console.error("Dashboard error:", e);
     }
 }
 
+// Submits selection to backend
 async function submitSelection() {
     const indoor = document.querySelector('input[name="indoor"]:checked');
     const outdoor = document.querySelector('input[name="outdoor"]:checked');
 
-    if (!indoor || !outdoor) return alert("Select both games!");
-
-    const mainUi = document.getElementById('main-ui');
-    mainUi.innerHTML = "<h3>Saving your selection...</h3>";
+    if(!indoor || !outdoor) return alert("Select both games!");
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
@@ -43,15 +40,11 @@ async function submitSelection() {
             })
         });
         const result = await res.json();
-        if (result.success) {
-            localStorage.clear();
-            mainUi.innerHTML = "<h2>Success! ✅</h2><button onclick='location.href=\"https://bomis-lbnagar.com/\"'>Home</button>";
-            updateLiveCounts();
+        if(result.success) {
+            alert("Selection Saved Successfully!");
+            window.location.href = "https://bomis-lbnagar.com/";
         }
-    } catch (e) {
-        alert("Connection failed. Check backend.");
-        location.reload();
-    }
+    } catch (e) { alert("Connection failed."); }
 }
 
 updateLiveCounts();
