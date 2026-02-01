@@ -15,7 +15,32 @@
             background-size: cover; 
             background-color: #f0f0f0;
         }
-        
+// REPLACE FROM LINE 18 DOWN TO LINE 42 WITH THIS:
+
+// Check if student exists
+app.get('/api/check-status/:enrollment_no', async (req, res) => {
+    try {
+        const { enrollment_no } = req.params; 
+        const result = await pool.query(
+            'SELECT student_name, student_class, section FROM students WHERE enrollment_no = $1', 
+            [enrollment_no] // This MUST match the variable name above
+        );
+
+        if (result.rows.length > 0) {
+            res.json({ 
+                verified: true, 
+                studentName: result.rows[0].student_name,
+                studentClass: result.rows[0].student_class,
+                section: result.rows[0].section
+            });
+        } else {
+            res.json({ verified: false });
+        }
+    } catch (err) {
+        console.error("Database Error:", err);
+        res.status(500).json({ error: "Database error" });
+    }
+});        
         .right-side { 
             flex: 0.8; 
             background-color: #002347; 
@@ -137,5 +162,6 @@
     </script>
 </body>
 </html>
+
 
 
