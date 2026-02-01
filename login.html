@@ -6,29 +6,73 @@
     <title>BOMIS Sports Selection</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { display: flex; height: 100vh; overflow: hidden; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: white; }
         
         /* Left Side: The Building Image */
-        .left-side { flex: 1.2; background: url('https://thebirlaopenmindsschool.com/images/school-building.jpg') no-repeat center center; background-size: cover; }
+        .left-side { 
+            flex: 1.2; 
+            background: url('https://thebirlaopenmindsschool.com/images/school-building.jpg') no-repeat center center; 
+            background-size: cover; 
+        }
         
         /* Right Side: The Blue Login Form */
-        .right-side { flex: 0.8; background-color: #002347; color: white; display: flex; flex-direction: column; justify-content: center; padding: 40px; }
+        .right-side { 
+            flex: 0.8; 
+            background-color: #002347; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            padding: 60px; 
+        }
         
-        h1 { font-size: 2.5rem; margin-bottom: 20px; }
+        h1 { font-size: 2.5rem; margin-bottom: 25px; line-height: 1.2; }
         h1 span { color: #FF9100; }
         
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-size: 1rem; color: #ccc; }
         
-        input { width: 100%; padding: 12px; border: none; border-radius: 4px; font-size: 1rem; margin-bottom: 10px; }
-        
-        .btn-verify { width: 100%; padding: 15px; background-color: #FF9100; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 4px; 
+            font-size: 1rem; 
+            margin-bottom: 10px; 
+            background-color: white;
+            color: #333;
+        }
+
+        /* Verify Button Styles */
+        .btn-verify { 
+            width: 100%; 
+            padding: 15px; 
+            background-color: #FF9100; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            font-size: 1rem;
+            cursor: pointer; 
+            transition: background 0.3s; 
+        }
         .btn-verify:hover { background-color: #e68200; }
         
-        .btn-proceed { width: 100%; padding: 15px; background-color: #555; color: #aaa; border: none; border-radius: 4px; font-weight: bold; cursor: default; margin-top: 10px; }
-        
-        #stepTwoArea { opacity: 0.3; pointer-events: none; transition: 0.5s; margin-top: 20px; }
-        #statusMessage { margin-top: 15px; font-size: 0.9rem; text-decoration: underline; }
+        /* Disabled Proceed Button Style */
+        .btn-proceed { 
+            width: 100%; 
+            padding: 15px; 
+            background-color: #3d4a5d; 
+            color: #7a869a; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: not-allowed; 
+            margin-top: 10px; 
+        }
+
+        #statusMessage { margin: 15px 0; font-size: 0.95rem; font-weight: 500; }
+        #stepTwoArea { display: none; margin-top: 20px; border-top: 1px solid #1a3b5c; padding-top: 20px; }
         #otpSection { display: none; margin-top: 15px; }
     </style>
 </head>
@@ -51,17 +95,21 @@
             <div class="form-group">
                 <label>Email ID</label>
                 <input type="email" id="email" placeholder="Enter Registered Email">
-                <button class="btn-verify" style="background-color: #444;" id="btnSendOtp" onclick="sendOtp()">Send OTP</button>
+                <button class="btn-verify" style="background-color: #2c3e50;" onclick="sendOtp()">Send OTP</button>
             </div>
         </div>
 
         <div id="otpSection">
-            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
-            <button class="btn-verify" onclick="verifyOtp()">Proceed to Selection</button>
+            <div class="form-group">
+                <label>OTP Verification</label>
+                <input type="text" id="otpInput" placeholder="Enter 6-digit OTP">
+                <button class="btn-verify" onclick="verifyOtp()">Proceed</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // Your LIVE Render backend URL
         const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
         let generatedOtp = null;
 
@@ -70,10 +118,14 @@
             const msg = document.getElementById('statusMessage');
             const stepTwo = document.getElementById('stepTwoArea');
 
-            if (!enrollNo) return alert("Please enter Enrollment Number");
+            if (!enrollNo) {
+                msg.innerHTML = "Please enter Enrollment Number.";
+                msg.style.color = "#FF9100";
+                return;
+            }
 
             msg.innerHTML = "Connecting to server...";
-            msg.style.color = "#FF9100";
+            msg.style.color = "#5dade2";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
@@ -82,15 +134,18 @@
                 if (data.verified) {
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = `Welcome, ${data.studentName}! Enrollment Verified.`;
-                    stepTwo.style.opacity = "1";
-                    stepTwo.style.pointerEvents = "all";
+                    stepTwo.style.display = "block";
                     localStorage.setItem('enrollmentNo', enrollNo);
+                    localStorage.setItem('studentName', data.studentName);
+                    localStorage.setItem('studentClass', data.studentClass);
                 } else {
                     msg.style.color = "#FF5252";
                     msg.innerHTML = "Enrollment number not found.";
                 }
             } catch (error) {
-                msg.innerHTML = "Server waking up... please try again in 30 seconds.";
+                console.error(error);
+                msg.style.color = "#FF9100";
+                msg.innerHTML = "Server is waking up. Please try again in 30 seconds.";
             }
         }
 
@@ -98,6 +153,10 @@
             const enrollNo = localStorage.getItem('enrollmentNo');
             const email = document.getElementById('email').value.trim();
             const msg = document.getElementById('statusMessage');
+
+            if (!email) return alert("Please enter email");
+
+            msg.innerHTML = "Verifying email...";
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
@@ -109,14 +168,17 @@
 
                 if (data.success) {
                     generatedOtp = Math.floor(100000 + Math.random() * 900000);
-                    alert("YOUR OTP FOR TESTING: " + generatedOtp);
+                    alert("TESTING OTP: " + generatedOtp);
                     document.getElementById('otpSection').style.display = "block";
-                    msg.innerHTML = "OTP Sent to email!";
+                    msg.innerHTML = "OTP Sent! Please check your email.";
+                    msg.style.color = "#4CAF50";
                 } else {
                     msg.style.color = "#FF5252";
-                    msg.innerHTML = "Email does not match our records.";
+                    msg.innerHTML = data.message || "Email mismatch.";
                 }
-            } catch (e) { alert("Connection Error"); }
+            } catch (e) {
+                alert("Server connection error.");
+            }
         }
 
         function verifyOtp() {
@@ -124,7 +186,7 @@
             if (userInput == generatedOtp) {
                 window.location.href = "sports-selection.html";
             } else {
-                alert("Invalid OTP. Try again.");
+                alert("Invalid OTP. Please try again.");
             }
         }
     </script>
