@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. UPDATED CORS: Explicitly allowing your GitHub Pages site
+// 1. CORS Configuration - Explicitly allowing your GitHub frontend
 app.use(cors({
     origin: 'https://rajeshnw5207-bomis.github.io',
     methods: ['GET', 'POST'],
@@ -15,27 +15,31 @@ app.use(cors({
 
 app.use(express.json());
 
-// Database Connection
+// 2. Database Connection (Supabase/PostgreSQL)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// 2. UPDATED NODEMAILER: Using Port 587 for better cloud compatibility
+// 3. UPDATED NODEMAILER: Optimized for Render's Network Environment
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // Use false for 587 (it will use STARTTLS)
+    secure: false, // Use STARTTLS on port 587
     auth: {
         user: 'rajesh.j@bomis-lbnagar.com',
         pass: 'tmuz msvd pixk bhcm' 
     },
+    // Added pooling to keep the connection alive and prevent timeouts
+    pool: true, 
+    maxConnections: 3,
     tls: {
-        rejectUnauthorized: false // Helps avoid handshake errors on cloud servers
+        rejectUnauthorized: false, // Prevents handshake failures on cloud servers
+        minVersion: 'TLSv1.2'
     }
 });
 
-// 1. Enrollment Check Route
+// Route 1: Enrollment Number Verification
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const enrollNo = req.params.enrollment_no.trim().toUpperCase();
@@ -56,11 +60,11 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
         }
     } catch (err) {
         console.error("Database Error:", err);
-        res.status(500).json({ error: "Database connection error." });
+        res.status(500).json({ error: "Database connection failed." });
     }
 });
 
-// 2. Email Verification & OTP Route
+// Route 2: Email Match & OTP Generation
 app.post('/api/verify-email', async (req, res) => {
     const { enrollment_no, email } = req.body;
     
@@ -68,7 +72,7 @@ app.post('/api/verify-email', async (req, res) => {
         const enrollNo = enrollment_no.trim().toUpperCase();
         const studentEmail = email.trim().toLowerCase();
 
-        // Matching both Enrollment AND Email
+        // Security Check: Match BOTH Enrollment ID and Email in Database
         const result = await pool.query(
             'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = $2',
             [enrollNo, studentEmail]
@@ -90,24 +94,29 @@ app.post('/api/verify-email', async (req, res) => {
                         <div style="text-align: center; font-size: 36px; font-weight: bold; background: #fdf2e9; padding: 20px; border-radius: 8px; color: #002347; letter-spacing: 5px;">
                             ${otp}
                         </div>
-                        <p style="margin-top: 20px; color: #666; font-size: 14px; text-align: center;">Enter this on the website to proceed.</p>
+                        <p style="margin-top: 20px; color: #666; font-size: 14px; text-align: center;">Please enter this code on the website to choose your sports.</p>
                     </div>
                 `
             };
 
+            // Send the email
             await transporter.sendMail(mailOptions);
-            console.log(`Email sent successfully to ${studentEmail}`);
+            console.log(`SUCCESS: OTP sent to ${studentEmail}`);
             res.json({ success: true, otp: otp }); 
 
         } else {
+            // Error: No record matches that ID + Email combination
             res.status(400).json({ success: false, message: "Email mismatch. Use your registered school email." });
         }
     } catch (err) {
-        console.error("System Error details:", err);
-        res.status(500).json({ success: false, error: "The server could not send the email. Please try again." });
+        console.error("Nodemailer System Error:", err);
+        res.status(500).json({ success: false, error: "Email system timeout. Please try again." });
     }
 });
 
-// Binding to 0.0.0.0 is critical for Render to detect the port
+// 4. Server Initialization
+// Binding to 0.0.0.0 is mandatory for Render's health checks
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Backend Active on Port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend Active on Port ${PORT}`);
+});
