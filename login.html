@@ -1,25 +1,49 @@
 <script>
+    // Configuration
+    const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
     let generatedOtp = null;
     let otpTimer = null;
-    const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+
+    // Ensure the script runs after the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("Login script initialized. Backend URL:", BACKEND_URL);
+    });
 
     async function verifyEnrollment() {
-        const enrollNo = document.getElementById('enrollmentNo').value;
+        const enrollNoInput = document.getElementById('enrollmentNo');
         const msg = document.getElementById('statusMessage');
         const stepTwo = document.getElementById('stepTwoArea');
+        
+        const enrollNo = enrollNoInput.value.trim();
+        if (!enrollNo) {
+            msg.innerHTML = "Please enter an enrollment number.";
+            msg.style.color = "orange";
+            return;
+        }
 
         msg.innerHTML = "Connecting to server...";
         msg.style.color = "blue";
 
         try {
-            const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+            // Using a timeout to prevent infinite "Connecting..." message
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+            const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`, {
+                signal: controller.signal
+            });
+            clearTimeout(id);
+            
             const data = await response.json();
 
             if (data.verified) {
                 msg.style.color = "green";
-                msg.innerHTML = `Welcome, ${data.studentName}! Please verify email.`;
+                msg.innerHTML = `Welcome, ${data.studentName}! Now verify your email.`;
+                
+                // Show Step 2
                 stepTwo.style.opacity = "1";
                 stepTwo.style.pointerEvents = "all";
+                stepTwo.style.display = "block"; // Ensure it is visible
                 
                 localStorage.setItem('enrollmentNo', enrollNo);
                 localStorage.setItem('studentName', data.studentName);
@@ -29,15 +53,24 @@
                 msg.innerHTML = "Enrollment number not found.";
             }
         } catch (error) {
+            console.error("Fetch Error:", error);
             msg.style.color = "red";
-            msg.innerHTML = "Server waking up... please try again in 30 seconds.";
+            msg.innerHTML = "Server is waking up. Please wait 30 seconds and try again.";
         }
     }
 
     async function sendOtp() {
         const enrollNo = document.getElementById('enrollmentNo').value;
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim();
         const msg = document.getElementById('statusMessage');
+
+        if (!email) {
+            msg.innerHTML = "Please enter your registered email.";
+            msg.style.color = "orange";
+            return;
+        }
+
+        msg.innerHTML = "Sending OTP...";
 
         try {
             const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
@@ -51,21 +84,24 @@
                 generatedOtp = Math.floor(100000 + Math.random() * 900000);
                 alert("TESTING OTP: " + generatedOtp); 
                 document.getElementById('otpSection').style.display = "block";
-                msg.innerHTML = "OTP Sent!";
+                msg.innerHTML = "OTP Sent! Check your alert box.";
+                msg.style.color = "green";
             } else {
-                msg.innerHTML = data.message;
+                msg.style.color = "red";
+                msg.innerHTML = data.message || "Email mismatch.";
             }
         } catch (error) {
-            msg.innerHTML = "Error sending OTP.";
+            msg.style.color = "red";
+            msg.innerHTML = "Error connecting to server.";
         }
     }
 
     function verifyOtp() {
         const userOtp = document.getElementById('otpInput').value;
-        if (userOtp == generatedOtp) {
+        if (userOtp && userOtp == generatedOtp) {
             window.location.href = "sports-selection.html";
         } else {
-            alert("Invalid OTP");
+            alert("Invalid OTP. Please check again.");
         }
     }
 </script>
