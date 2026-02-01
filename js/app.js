@@ -45,7 +45,7 @@ app.post('/api/verify-email', async (req, res) => {
     const { enrollment_no, email } = req.body;
     try {
         const result = await pool.query(
-            'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND email = $2',
+            'SELECT student_name FROM bomis_db WHERE enrollment_no = $1 AND TRIM(LOWER(email)) = TRIM(LOWER($2))',
             [enrollment_no, email]
         );
 
@@ -80,3 +80,4 @@ app.post('/api/verify-email', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
