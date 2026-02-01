@@ -15,31 +15,34 @@ const pool = new Pool({
     }
 });
 
-// Check if student exists
-app.get('/api/check-status/:enrollNo', async (req, res) => {
+// 1. Check if student exists
+app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
-        const { enrollNo } = req.params;
+        const { enrollment_no } = req.params; // Using enrollment_no from URL
+        
         const result = await pool.query(
-            'SELECT name, student_class FROM students WHERE enrollment_no = $1', 
-            [enrollNo]
+            // FIXED: Added 'section' and changed 'name' to 'student_name' to match your Excel headers
+            'SELECT student_name, student_class, section FROM students WHERE enrollment_no = $1', 
+            [enrollment_no] // FIXED: Changed from enrollNo to enrollment_no
         );
 
         if (result.rows.length > 0) {
             res.json({ 
                 verified: true, 
-                studentName: result.rows[0].name,
-                studentClass: result.rows[0].student_class 
+                studentName: result.rows[0].student_name,
+                studentClass: result.rows[0].student_class,
+                section: result.rows[0].section // Now sending section to the frontend
             });
         } else {
             res.json({ verified: false });
         }
     } catch (err) {
-        console.error(err);
+        console.error("Database Error:", err);
         res.status(500).json({ error: "Database error" });
     }
 });
 
-// Verify email and enrollment match
+// 2. Verify email and enrollment match
 app.post('/api/verify-email', async (req, res) => {
     const { enrollNo, email } = req.body;
     try {
@@ -54,6 +57,7 @@ app.post('/api/verify-email', async (req, res) => {
             res.json({ success: false, message: "Email does not match our records." });
         }
     } catch (err) {
+        console.error("Server Error:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
