@@ -1,6 +1,6 @@
 const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
 
-// Updates the dashboard UI by fetching data from the backend
+// Updates the sidebar UI
 async function updateLiveCounts() {
     try {
         const res = await fetch(`${BACKEND_URL}/api/live-counts`);
@@ -22,12 +22,18 @@ async function updateLiveCounts() {
     }
 }
 
-// Submits selection to backend
+// Saves choices and ends session
 async function submitSelection() {
     const indoor = document.querySelector('input[name="indoor"]:checked');
     const outdoor = document.querySelector('input[name="outdoor"]:checked');
 
-    if(!indoor || !outdoor) return alert("Select both games!");
+    if (!indoor || !outdoor) {
+        alert("Please select both games!");
+        return;
+    }
+
+    const mainUi = document.getElementById('main-ui');
+    mainUi.innerHTML = "<h3>Saving your selection... Please wait.</h3>";
 
     try {
         const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
@@ -40,11 +46,24 @@ async function submitSelection() {
             })
         });
         const result = await res.json();
-        if(result.success) {
-            alert("Selection Saved Successfully!");
-            window.location.href = "https://bomis-lbnagar.com/";
+        if (result.success) {
+            localStorage.clear();
+            mainUi.innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <h2 style="color:#4CAF50;">Success! ✅</h2>
+                    <p>Your selection has been recorded.</p>
+                    <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="margin-top:20px; padding:10px 20px; background:#FF8C00; color:white; border:none; border-radius:5px; cursor:pointer;">Go to Home</button>
+                </div>`;
+            updateLiveCounts();
+        } else {
+            alert("Could not save selection.");
+            location.reload();
         }
-    } catch (e) { alert("Connection failed."); }
+    } catch (e) {
+        alert("Connection failed. Check backend status.");
+        location.reload();
+    }
 }
 
+// Start counts on load
 updateLiveCounts();
