@@ -7,23 +7,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database Connection with SSL for Supabase
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
-// 1. Check if student exists
+// FIXED: Using 'enrollment_no' to match your database exactly
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
-        const { enrollment_no } = req.params; // Using enrollment_no from URL
-        
+        const { enrollment_no } = req.params; 
         const result = await pool.query(
-            // FIXED: Added 'section' and changed 'name' to 'student_name' to match your Excel headers
             'SELECT student_name, student_class, section FROM students WHERE enrollment_no = $1', 
-            [enrollment_no] // FIXED: Changed from enrollNo to enrollment_no
+            [enrollment_no] 
         );
 
         if (result.rows.length > 0) {
@@ -31,18 +26,17 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
                 verified: true, 
                 studentName: result.rows[0].student_name,
                 studentClass: result.rows[0].student_class,
-                section: result.rows[0].section // Now sending section to the frontend
+                section: result.rows[0].section
             });
         } else {
             res.json({ verified: false });
         }
     } catch (err) {
-        console.error("Database Error:", err);
+        console.error("Query Error:", err);
         res.status(500).json({ error: "Database error" });
     }
 });
 
-// 2. Verify email and enrollment match
 app.post('/api/verify-email', async (req, res) => {
     const { enrollNo, email } = req.body;
     try {
@@ -50,14 +44,12 @@ app.post('/api/verify-email', async (req, res) => {
             'SELECT * FROM students WHERE enrollment_no = $1 AND email = $2',
             [enrollNo, email]
         );
-
         if (result.rows.length > 0) {
             res.json({ success: true });
         } else {
-            res.json({ success: false, message: "Email does not match our records." });
+            res.json({ success: false });
         }
     } catch (err) {
-        console.error("Server Error:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
