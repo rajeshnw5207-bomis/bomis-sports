@@ -43,63 +43,76 @@
             </div>
         </div>
     </div>
-    <script>
-        const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
-        let generatedOtp = null;
+<script>
+    const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+    let generatedOtp = null;
 
-        async function verifyEnrollment() {
-            const enrollNo = document.getElementById('enrollment_no').value.trim();
-            const msg = document.getElementById('statusMessage');
-            if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
-            msg.innerHTML = "Verifying...";
-            try {
-                const response = await fetch(`${"https://bomis-sports-backend.onrender.com"}/api/check-status/${enrollNo}`);
-                const data = await response.json();
-                if (data.verified) {
-                    msg.style.color = "#4CAF50";
-                    msg.innerHTML = "Enrollment Verified! Please enter email.";
-                    document.getElementById('stepTwoArea').style.display = "block";
-                    localStorage.setItem('enrollment_no', enrollNo);
-                } else {
-                    msg.style.color = "#FF5252";
-                    msg.innerHTML = "Enrollment not found.";
-                }
-            } catch (e) { msg.innerHTML = "Connection Error."; }
-        }
-
-       async function sendOtp() {
-            const email = document.getElementById('email').value.trim();
-            const enrollment_no = localStorage.getItem('enrollment_no');
+    async function verifyEnrollment() {
+        const enrollNo = document.getElementById('enrollment_no').value.trim();
+        const msg = document.getElementById('statusMessage');
+        
+        if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
+        
+        msg.innerHTML = "Verifying...";
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+            const data = await response.json();
             
-            if(!email) { alert("Please enter your email"); return; }
-
-            try {
-                // UPDATED: Using your specific Render URL directly here
-                const response = await fetch("https://bomis-sports-backend.onrender.com/api/verify-email", {
-                    method: 'POST',
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ enrollment_no, email })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // This is the real OTP sent from the backend/email service
-                    generatedOtp = data.otp; 
-                    alert("A verification code has been sent to your email!");
-                    document.getElementById('otpSection').style.display = "block";
-                } else { 
-                    alert("Email mismatch. Please use your registered school email."); 
-                }
-
-        function verifyOtp() {
-            if (document.getElementById('otpInput').value == generatedOtp) {
-                window.location.href = "games.html";
-            } else { alert("Invalid OTP"); }
+            if (data.verified) {
+                msg.style.color = "#4CAF50";
+                msg.innerHTML = "Enrollment Verified! Please enter email.";
+                document.getElementById('stepTwoArea').style.display = "block";
+                localStorage.setItem('enrollment_no', enrollNo);
+            } else {
+                msg.style.color = "#FF5252";
+                msg.innerHTML = "Enrollment not found.";
+            }
+        } catch (e) { 
+            msg.innerHTML = "Connection Error. Check if Render is live."; 
+            console.error(e);
         }
-    </script>
+    }
+
+    async function sendOtp() {
+        const email = document.getElementById('email').value.trim();
+        const enrollment_no = localStorage.getItem('enrollment_no');
+        
+        if(!email) { alert("Please enter your email"); return; }
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/verify-email`, {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enrollment_no, email })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                generatedOtp = data.otp; 
+                alert("A verification code has been sent to your email!");
+                document.getElementById('otpSection').style.display = "block";
+            } else { 
+                alert("Email mismatch. Please use your registered school email."); 
+            }
+        } catch (e) { 
+            alert("Connection Error.");
+            console.error(e);
+        }
+    } // Added missing closing brace
+
+    function verifyOtp() {
+        const inputOtp = document.getElementById('otpInput').value;
+        if (inputOtp == generatedOtp) {
+            window.location.href = "games.html";
+        } else { 
+            alert("Invalid OTP"); 
+        }
+    }
+</script>
 </body>
 </html>
+
 
 
 
