@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// 1. Verify Enrollment
+// 1. Verify Enrollment - THIS IS NOW THE ONLY TRAFFIC FILTER
 app.get('/api/check-status/:enrollNo', async (req, res) => {
     try {
         const { enrollNo } = req.params;
@@ -38,11 +38,23 @@ app.get('/api/check-status/:enrollNo', async (req, res) => {
         
         if (result.rows.length > 0) {
             const student = result.rows[0];
+            
+            // Check if selection_status is true
+            if (student.selection_status === true) {
+                console.log(`🚫 Traffic Filtered: ${enrollNo} already submitted.`);
+                return res.json({ 
+                    verified: true, 
+                    alreadyDone: true, 
+                    message: "Selection already recorded for this student." 
+                });
+            }
+
+            // If not submitted, allow them to proceed
             res.json({ 
                 verified: true, 
+                alreadyDone: false,
                 studentName: student.student_name,
-                studentClass: student.student_class,
-                alreadyDone: student.selection_status || false 
+                studentClass: student.student_class
             });
         } else {
             res.json({ verified: false, message: "Enrollment not found." });
@@ -106,7 +118,7 @@ app.get('/api/live-counts/:studentClass', async (req, res) => {
     }
 });
 
-// 4. Submit Selection
+// 4. Submit Selection (Cleaned up - duplicate check handled at login)
 app.post('/api/submit-selection', async (req, res) => {
     const { enrollNo, indoor, outdoor } = req.body;
     try {
