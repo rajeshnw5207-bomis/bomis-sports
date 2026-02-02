@@ -83,16 +83,21 @@
     </div>
 
     <script>
-        const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+        // Updated to your permanent ngrok URL
+        const BACKEND_URL = "https://arlean-oleoyl-obeisantly.ngrok-free.dev";
         const studentClass = localStorage.getItem('student_class');
         const enrollment = localStorage.getItem('enrollment_no');
 
-        // Security: Redirect if no session
+        // Headers needed for ngrok communication
+        const ngrokHeaders = {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+        };
+
         if (!enrollment || !studentClass) {
             window.location.href = "index.html";
         }
 
-        // 1. SESSION TIMER LOGIC
         function startTimer() {
             const timerDisplay = document.getElementById('timer');
             const interval = setInterval(() => {
@@ -111,14 +116,16 @@
                 const mins = Math.floor(timeLeft / 60000);
                 const secs = Math.floor((timeLeft % 60000) / 1000);
                 timerDisplay.innerHTML = `Time Left: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                if (timeLeft < 30000) timerDisplay.style.color = "#FFD700"; // Warn at 30s
+                if (timeLeft < 30000) timerDisplay.style.color = "#FFD700"; 
             }, 1000);
         }
 
-        // 2. LIVE COUNTS (CLASS SPECIFIC)
         async function updateLiveCounts() {
             try {
-                const res = await fetch(`${BACKEND_URL}/api/live-counts/${studentClass}`);
+                // Added ngrokHeaders here
+                const res = await fetch(`${BACKEND_URL}/api/live-counts/${studentClass}`, {
+                    headers: ngrokHeaders
+                });
                 const counts = await res.json();
                 
                 const getPct = (val) => Math.min((val / 30) * 100, 100);
@@ -134,70 +141,4 @@
                     <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.cricket)}%"></div></div>
                     
                     <p>Football: ${counts.football}/30</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.football)}%"></div></div>
-                `;
-                document.getElementById('stats-container').innerHTML = statsHtml;
-
-                // Auto-disable radio buttons if a game is full (30 limit)
-                if (counts.chess >= 30) document.getElementById('c1').disabled = true;
-                if (counts.tt >= 30) document.getElementById('c2').disabled = true;
-                if (counts.cricket >= 30) document.getElementById('o1').disabled = true;
-                if (counts.football >= 30) document.getElementById('o2').disabled = true;
-
-            } catch (e) {
-                document.getElementById('stats-container').innerHTML = "<p style='color:#FF8C00;'>Updating availability...</p>";
-            }
-        }
-
-        // 3. SUBMIT SELECTION
-        async function submitSelection() {
-            const indoor = document.querySelector('input[name="indoor"]:checked');
-            const outdoor = document.querySelector('input[name="outdoor"]:checked');
-
-            if (!indoor || !outdoor) {
-                alert("Please select both an Indoor and Outdoor game!");
-                return;
-            }
-
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = "Processing Selection...";
-
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        enrollment_no: enrollment,
-                        indoor_game: indoor.value,
-                        outdoor_game: outdoor.value
-                    })
-                });
-
-                const result = await res.json();
-                if (result.success) {
-                    localStorage.clear();
-                    document.getElementById('main-ui').innerHTML = `
-                        <div style="text-align:center; padding:40px;">
-                            <h2 style="color:#4CAF50; font-size: 30px;">Success! ✅</h2>
-                            <p style="font-size: 18px; color: #555;">Your sports selection for 2026-27 has been recorded.</p>
-                            <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="width: 200px;">Back to Home</button>
-                        </div>`;
-                } else {
-                    alert(result.message || "Game full! Please refresh and try another.");
-                    location.reload(); 
-                }
-            } catch (e) {
-                alert("Server busy. Please try again in a moment.");
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "SUBMIT SELECTION";
-            }
-        }
-
-        // INITIALIZE PAGE
-        startTimer();
-        updateLiveCounts();
-        setInterval(updateLiveCounts, 10000); // Auto-refresh counts every 10 seconds
-    </script>
-</body>
-</html>
+                    <div class="progress-
