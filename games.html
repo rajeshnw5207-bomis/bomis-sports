@@ -6,48 +6,24 @@
     <title>BOMIS Sports Selection</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; margin: 0; padding: 0; }
-        
-        .header { 
-            background: #FF8C00; 
-            color: white; 
-            padding: 15px 20px; 
-            text-align: center; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-        }
+        .header { background: #FF8C00; color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .header-title { font-size: 22px; font-weight: bold; }
         #timer { font-size: 18px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; }
-        
         .container { display: flex; max-width: 1200px; margin: 20px auto; gap: 20px; padding: 0 15px; }
-        
-        /* LEFT SIDE: SELECTION FORM */
         .selection-box { flex: 2; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        /* RIGHT SIDE: LIVE DASHBOARD */
         .sidebar { flex: 1; background: #2c3e50; color: white; padding: 20px; border-radius: 10px; height: fit-content; }
-        
-        /* PROGRESS BARS */
         .progress-bar { width: 100%; background: #444; border-radius: 10px; height: 12px; margin: 10px 0 20px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: #4CAF50; transition: width 0.5s ease-in-out; }
-        
         h2 { color: #FF8C00; margin-top: 0; }
         h3 { margin-top: 25px; border-left: 4px solid #FF8C00; padding-left: 10px; }
-        
         .game-option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
         .game-option:hover { background: #fff9f0; border-color: #FF8C00; }
         .game-option input { margin-right: 15px; transform: scale(1.2); }
         .game-option label { cursor: pointer; width: 100%; font-weight: 500; }
-
         button { background: #FF8C00; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; margin-top: 30px; transition: 0.3s; }
         button:hover { background: #e07b00; transform: translateY(-2px); }
         button:disabled { background: #ccc; cursor: not-allowed; }
-
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .header { flex-direction: column; gap: 10px; }
-        }
+        @media (max-width: 768px) { .container { flex-direction: column; } .header { flex-direction: column; gap: 10px; } }
     </style>
 </head>
 <body>
@@ -83,20 +59,12 @@
     </div>
 
     <script>
-        // Updated to your permanent ngrok URL
         const BACKEND_URL = "https://arlean-oleoyl-obeisantly.ngrok-free.dev";
         const studentClass = localStorage.getItem('student_class');
         const enrollment = localStorage.getItem('enrollment_no');
+        const ngrokHeaders = { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" };
 
-        // Headers needed for ngrok communication
-        const ngrokHeaders = {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
-        };
-
-        if (!enrollment || !studentClass) {
-            window.location.href = "index.html";
-        }
+        if (!enrollment || !studentClass) { window.location.href = "index.html"; }
 
         function startTimer() {
             const timerDisplay = document.getElementById('timer');
@@ -104,41 +72,81 @@
                 const expiry = localStorage.getItem('session_expiry');
                 const now = Date.now();
                 const timeLeft = expiry - now;
-
                 if (timeLeft <= 0) {
                     clearInterval(interval);
                     localStorage.clear();
-                    alert("Session Expired (2 Min Limit). Please login again.");
+                    alert("Session Expired. Please login again.");
                     window.location.href = "index.html";
-                    return;
                 }
-
                 const mins = Math.floor(timeLeft / 60000);
                 const secs = Math.floor((timeLeft % 60000) / 1000);
                 timerDisplay.innerHTML = `Time Left: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                if (timeLeft < 30000) timerDisplay.style.color = "#FFD700"; 
             }, 1000);
         }
 
         async function updateLiveCounts() {
             try {
-                // Added ngrokHeaders here
-                const res = await fetch(`${BACKEND_URL}/api/live-counts/${studentClass}`, {
-                    headers: ngrokHeaders
-                });
+                const res = await fetch(`${BACKEND_URL}/api/live-counts/${studentClass}`, { headers: ngrokHeaders });
                 const counts = await res.json();
-                
                 const getPct = (val) => Math.min((val / 30) * 100, 100);
 
-                const statsHtml = `
-                    <p>Chess: ${counts.chess}/30</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.chess)}%"></div></div>
-                    
-                    <p>Table Tennis: ${counts.tt}/30</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.tt)}%"></div></div>
-                    
-                    <p>Cricket: ${counts.cricket}/30</p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.cricket)}%"></div></div>
-                    
-                    <p>Football: ${counts.football}/30</p>
-                    <div class="progress-
+                document.getElementById('stats-container').innerHTML = `
+                    <p>Chess: ${counts.chess || 0}/30</p>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.chess || 0)}%"></div></div>
+                    <p>Table Tennis: ${counts.tt || 0}/30</p>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.tt || 0)}%"></div></div>
+                    <p>Cricket: ${counts.cricket || 0}/30</p>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.cricket || 0)}%"></div></div>
+                    <p>Football: ${counts.football || 0}/30</p>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.football || 0)}%"></div></div>
+                `;
+            } catch (e) { console.error("Error fetching counts"); }
+        }
+
+        async function submitSelection() {
+            const indoor = document.querySelector('input[name="indoor"]:checked');
+            const outdoor = document.querySelector('input[name="outdoor"]:checked');
+
+            if (!indoor || !outdoor) {
+                alert("Please select one game from each category!");
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = "Submitting...";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/submit-selection`, {
+                    method: 'POST',
+                    headers: ngrokHeaders,
+                    body: JSON.stringify({
+                        enrollNo: enrollment,
+                        studentClass: studentClass,
+                        indoor: indoor.value,
+                        outdoor: outdoor.value
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("Selection Successful!");
+                    localStorage.clear();
+                    window.location.href = "index.html";
+                } else {
+                    alert(data.message || "Submission failed.");
+                    btn.disabled = false;
+                    btn.innerHTML = "SUBMIT SELECTION";
+                }
+            } catch (e) {
+                alert("Server error. Please try again.");
+                btn.disabled = false;
+            }
+        }
+
+        startTimer();
+        updateLiveCounts();
+        setInterval(updateLiveCounts, 5000); // Update every 5 seconds
+    </script>
+</body>
+</html>
