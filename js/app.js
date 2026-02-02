@@ -25,7 +25,7 @@ const pool = new Pool({
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'rajesh.nw.5207@gmail.comv', 
+        user: 'rajesh.nw.5207@gmail.com', 
         pass: 'jeum kfef faef xmmc'       
     }
 });
@@ -75,7 +75,7 @@ app.post('/api/verify-email', async (req, res) => {
 
             // SEND MAIL
             await transporter.sendMail({
-                from: '"BOMIS Sports" <rajesh.nw.5207@gmail.comv>', 
+                from: '"BOMIS Sports" <rajesh.nw.5207@gmail.com>', 
                 to: email.trim(),
                 subject: 'BOMIS Sports Selection OTP',
                 text: `Your OTP is: ${otp}. This code is valid for 2 minutes.`
@@ -107,3 +107,4 @@ pool.query('SELECT NOW()', (err) => {
         console.log('✅ Successfully Connected to Supabase!'); 
     }
 });
+
