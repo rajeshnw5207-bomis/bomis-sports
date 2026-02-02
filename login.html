@@ -48,7 +48,6 @@
                 <label>Enter 6-Digit OTP Sent to Email</label>
                 <input type="text" id="otpInput" maxlength="6" placeholder="000000">
                 <button id="proceedBtn" class="btn-verify" onclick="verifyOtp()">Proceed to Selection</button>
-                <p style="font-size: 12px; color: #aaa; margin-top: 10px; text-align: center;">OTP expires in 2 minutes</p>
             </div>
         </div>
     </div>
@@ -67,12 +66,13 @@
             const enrollNo = document.getElementById('enrollment_no').value.trim().toUpperCase();
             const msg = document.getElementById('statusMessage');
             const enrollBtn = document.getElementById('verifyEnrollBtn');
+            const stepTwo = document.getElementById('stepTwoArea');
             
             if(!enrollNo) { alert("Please enter Enrollment Number"); return; }
             
             enrollBtn.disabled = true;
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Verifying credentials...";
+            msg.innerHTML = "Verifying...";
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`, {
@@ -81,22 +81,23 @@
                 const data = await response.json();
                 
                 if (data.verified) {
-                    // NEW: Filter traffic for second-time submission
-                    if (data.alreadyDone) {
+                    // 1. CHECK IF ALREADY DONE
+                    if (data.alreadyDone === true) {
                         msg.style.color = "#FF5252";
                         msg.innerHTML = "🚫 Selection already recorded for this Enrollment.";
+                        stepTwo.style.display = "none"; // Ensure email section is hidden
                         enrollBtn.disabled = false;
-                        return; // Stop the flow here
+                        return;
                     }
 
-                    // If not already done, proceed as normal
+                    // 2. IF NOT DONE, SHOW NAME AND PROCEED
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = `✅ Welcome, ${data.studentName}!`;
+                    msg.innerHTML = `✅ Welcome, ${data.studentName}!`; // Fixed the name display
                     
                     localStorage.setItem('enrollment_no', enrollNo);
                     localStorage.setItem('student_class', data.studentClass);
 
-                    document.getElementById('stepTwoArea').style.display = "block";
+                    stepTwo.style.display = "block";
                     document.getElementById('sendOtpBtn').disabled = false;
                     document.getElementById('enrollment_no').disabled = true;
                     enrollBtn.style.display = "none"; 
@@ -107,7 +108,7 @@
                 }
             } catch (e) { 
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Tunnel Error: Ensure ngrok is running.";
+                msg.innerHTML = "Connection Error. Check server/ngrok.";
                 enrollBtn.disabled = false;
             }
         }
@@ -121,9 +122,7 @@
             if(!email) { alert("Please enter email"); return; }
 
             sendBtn.disabled = true;
-            sendBtn.innerHTML = "Sending...";
-            msg.style.color = "#FF9100";
-            msg.innerHTML = "Requesting OTP...";
+            msg.innerHTML = "Sending OTP...";
 
             try {
                 const res = await fetch(`${BACKEND_URL}/api/verify-email`, {
@@ -136,28 +135,16 @@
                 if (data.success) {
                     generatedOtp = data.otp;
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = "OTP Sent! Check your inbox.";
-                    
+                    msg.innerHTML = "OTP Sent to " + email;
                     document.getElementById('otpSection').style.display = "block";
                     document.getElementById('email').disabled = true;
-                    sendBtn.innerHTML = "OTP Sent";
-
-                    clearTimeout(otpExpiryTimer);
-                    otpExpiryTimer = setTimeout(() => {
-                        generatedOtp = null;
-                        alert("OTP has expired. Please try again.");
-                        location.reload();
-                    }, 120000);
-
                 } else { 
                     alert(data.message || "Email mismatch."); 
                     sendBtn.disabled = false;
-                    sendBtn.innerHTML = "Send OTP to Email";
                 }
             } catch (e) { 
-                alert("Server error. Check terminal."); 
+                alert("Server error."); 
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = "Send OTP to Email";
             }
         }
 
@@ -168,7 +155,7 @@
                 localStorage.setItem('session_expiry', expiry);
                 window.location.href = "games.html";
             } else { 
-                alert("Invalid or expired OTP."); 
+                alert("Invalid OTP."); 
             }
         }
     </script>
