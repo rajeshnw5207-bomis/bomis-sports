@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
-// Required to bypass ngrok's manual warning page
+// Bypass ngrok browser warning for the frontend
 app.use((req, res, next) => {
     res.setHeader('ngrok-skip-browser-warning', 'true');
     next();
@@ -15,13 +15,13 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// 1. Database Connection
+// Database Connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// 2. Email Setup (Using your provided App Password)
+// Email Setup using App Password
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// 3. Verify Enrollment Route
+// 1. Verify Enrollment
 app.get('/api/check-status/:enrollNo', async (req, res) => {
     try {
         const { enrollNo } = req.params;
@@ -42,25 +42,21 @@ app.get('/api/check-status/:enrollNo', async (req, res) => {
                 verified: true, 
                 studentName: student.student_name,
                 studentClass: student.student_class,
-                alreadyDone: student.selection_status || false // Checks if already submitted
+                alreadyDone: student.selection_status || false 
             });
         } else {
             res.json({ verified: false, message: "Enrollment not found." });
         }
     } catch (err) { 
-        console.error("❌ Database Error:", err.message);
         res.status(500).json({ error: "DB Connection Failed" }); 
     }
 });
 
-// 4. Verify Email & SEND OTP Route
+// 2. Send OTP
 app.post('/api/verify-email', async (req, res) => {
     try {
         const { enrollNo, email } = req.body;
-
-        if (!enrollNo || !email) {
-            return res.status(400).json({ success: false, message: "Missing enrollment or email." });
-        }
+        if (!enrollNo || !email) return res.status(400).json({ success: false });
 
         const result = await pool.query(
             'SELECT * FROM bomis_db WHERE enrollment_no = $1 AND LOWER(email) = LOWER($2)', 
@@ -68,28 +64,25 @@ app.post('/api/verify-email', async (req, res) => {
         );
         
         if (result.rows.length > 0) {
-            const student = result.rows[0]; 
             const otp = Math.floor(100000 + Math.random() * 900000);
-
             await transporter.sendMail({
                 from: '"BOMIS Sports" <bomis.sports2026@gmail.com>', 
                 to: email.trim(),
                 subject: 'BOMIS Sports Selection OTP',
-                text: `Your OTP is: ${otp}. This code is valid for 2 minutes.`
+                text: `Your OTP is: ${otp}`
             });
-
             console.log(`✅ OTP ${otp} sent to ${email}`);
-            res.json({ success: true, otp: otp, studentClass: student.student_class });
+            res.json({ success: true, otp: otp, studentClass: result.rows[0].student_class });
         } else {
             res.json({ success: false, message: "Email mismatch." });
         }
     } catch (err) {
-        console.error("❌ Server Error:", err.message);
+        console.error("❌ Mail Error:", err.message);
         res.status(500).json({ error: "Mail/Server Error" });
     }
 });
 
-// 5. GET LIVE COUNTS (Fixed "No live count" issue)
+// 3. Live Counts for games.html
 app.get('/api/live-counts/:studentClass', async (req, res) => {
     try {
         const { studentClass } = req.params;
@@ -99,10 +92,8 @@ app.get('/api/live-counts/:studentClass', async (req, res) => {
                 COUNT(*) FILTER (WHERE indoor_selection = 'Table Tennis') as tt,
                 COUNT(*) FILTER (WHERE outdoor_selection = 'Cricket') as cricket,
                 COUNT(*) FILTER (WHERE outdoor_selection = 'Football') as football
-            FROM bomis_db 
-            WHERE student_class = $1`, [studentClass]);
+            FROM bomis_db WHERE student_class = $1`, [studentClass]);
         
-        // Ensure values are numbers
         const counts = result.rows[0];
         res.json({
             chess: parseInt(counts.chess || 0),
@@ -111,25 +102,19 @@ app.get('/api/live-counts/:studentClass', async (req, res) => {
             football: parseInt(counts.football || 0)
         });
     } catch (err) {
-        console.error("❌ Stats Error:", err.message);
         res.status(500).json({ error: "Failed to fetch counts" });
     }
 });
 
-// 6. SUBMIT SELECTION (Fixed "Server error after submitting" issue)
+// 4. Submit Selection
 app.post('/api/submit-selection', async (req, res) => {
     const { enrollNo, indoor, outdoor } = req.body;
     try {
-        if (!enrollNo || !indoor || !outdoor) {
-            return res.status(400).json({ success: false, message: "Missing selection data." });
-        }
-
         await pool.query(
             'UPDATE bomis_db SET indoor_selection = $1, outdoor_selection = $2, selection_status = TRUE WHERE enrollment_no = $3',
             [indoor, outdoor, enrollNo.toUpperCase()]
         );
-        
-        console.log(`🎯 Selection saved for ${enrollNo}: ${indoor} & ${outdoor}`);
+        console.log(`🎯 Selection saved for ${enrollNo}`);
         res.json({ success: true });
     } catch (err) {
         console.error("❌ Submission Error:", err.message);
@@ -137,12 +122,9 @@ app.post('/api/submit-selection', async (req, res) => {
     }
 });
 
-app.listen(3000, () => { console.log('✅ Server running on 3000'); });
-
-pool.query('SELECT NOW()', (err) => { 
-    if (err) {
-        console.log('❌ DB Connection Failed!');
-    } else {
-        console.log('✅ Successfully Connected to Supabase!'); 
-    }
+app.listen(3000, () => { 
+    console.log('✅ Server running on 3000');
+    pool.query('SELECT NOW()', (err) => {
+        if (!err) console.log('✅ Successfully Connected to Supabase!');
+    });
 });
