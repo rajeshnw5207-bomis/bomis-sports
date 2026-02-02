@@ -5,10 +5,18 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
+
+// --- NGROK BROWSER WARNING BYPASS ---
+// This header ensures students don't see the ngrok "interstitial" warning page
+app.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+    next();
+});
+
 app.use(cors());
 app.use(express.json());
 
-// Database Connection Pooling
+// Database Connection (Supabase)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
@@ -17,24 +25,22 @@ const pool = new Pool({
     connectionTimeoutMillis: 2000,
 });
 
-// Gmail Transporter for OTPs
+// Gmail Transporter (Using Port 465 for stability)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, // Changed from default
-    secure: true, // true for 465, false for other ports
+    port: 465,
+    secure: true, 
     auth: {
         user: 'bomis.sports2026@gmail.com', 
-        pass: 'jeum kfef faef xmmc' // Your 16-digit App Password
+        pass: 'jeum kfef faef xmmc' // 16-digit App Password
     },
     tls: {
-        // This is critical: it prevents the connection from dropping 
-        // if Render and Gmail have a certificate mismatch
         rejectUnauthorized: false 
     },
-    connectionTimeout: 10000 // 10 seconds
+    connectionTimeout: 10000 
 });
 
-// 1. Enrollment Check (Open for all classes)
+// 1. Enrollment Check
 app.get('/api/check-status/:enrollment_no', async (req, res) => {
     try {
         const enrollNo = req.params.enrollment_no.trim().toUpperCase();
@@ -45,18 +51,19 @@ app.get('/api/check-status/:enrollment_no', async (req, res) => {
 
         if (result.rows.length > 0) {
             const student = result.rows[0];
-            const alreadyDone = student.indoor_selection !== null;
-
             res.json({ 
                 verified: true, 
                 studentName: student.student_name, 
                 studentClass: student.student_class, 
-                alreadyDone 
+                alreadyDone: student.indoor_selection !== null 
             });
         } else {
             res.json({ verified: false, message: "Enrollment number not found." });
         }
-    } catch (err) { res.status(500).json({ error: "DB Error" }); }
+    } catch (err) { 
+        console.error("DB Error:", err);
+        res.status(500).json({ error: "DB Error" }); 
+    }
 });
 
 // 2. Email Verification + Gmail OTP Send
@@ -72,7 +79,7 @@ app.post('/api/verify-email', async (req, res) => {
             const otp = Math.floor(100000 + Math.random() * 900000);
             
             const mailOptions = {
-                from: '"BOMIS Sports" <your-email@gmail.com>',
+                from: '"BOMIS Sports" <bomis.sports2026@gmail.com>', // Matches auth user
                 to: email.trim().toLowerCase(),
                 subject: 'Your Login OTP',
                 html: `<div style="font-family: Arial; padding:20px; border:1px solid #ddd; border-radius:10px;">
@@ -89,12 +96,12 @@ app.post('/api/verify-email', async (req, res) => {
             res.status(400).json({ success: false, message: "Email not registered." });
         }
     } catch (err) { 
-        console.error(err);
+        console.error("Mail Error:", err);
         res.status(500).json({ success: false, message: "Mail service error." }); 
     }
 });
 
-// 3. Live Dashboard Counts (Class-Specific)
+// 3. Live Dashboard Counts
 app.get('/api/live-counts/:student_class', async (req, res) => {
     try {
         const sClass = req.params.student_class;
@@ -116,7 +123,7 @@ app.get('/api/live-counts/:student_class', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// 4. Save Selection with "30-Limit per Class" Safety Check
+// 4. Save Selection with Limit Check
 app.post('/api/save-selection', async (req, res) => {
     const { enrollment_no, indoor_game, outdoor_game } = req.body;
     try {
@@ -148,6 +155,9 @@ app.post('/api/save-selection', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server live on ${PORT}`));
-
+// Set PORT to 3000 for ngrok
+const PORT = 3000; 
+app.listen(PORT, () => {
+    console.log(`BOMIS Backend running locally on port ${PORT}`);
+    console.log(`Expose this port using: ngrok http 3000 --url=arlean-oleoyl-obeisantly.ngrok-free.dev`);
+});
