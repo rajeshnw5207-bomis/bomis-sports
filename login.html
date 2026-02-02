@@ -54,7 +54,6 @@
     </div>
 
     <script>
-        // Updated to your permanent ngrok URL
         const BACKEND_URL = "https://arlean-oleoyl-obeisantly.ngrok-free.dev";
         let generatedOtp = null;
         let otpExpiryTimer = null;
@@ -73,7 +72,7 @@
             
             enrollBtn.disabled = true;
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Accessing secure tunnel...";
+            msg.innerHTML = "Verifying credentials...";
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`, {
@@ -82,8 +81,17 @@
                 const data = await response.json();
                 
                 if (data.verified) {
+                    // NEW: Filter traffic for second-time submission
+                    if (data.alreadyDone) {
+                        msg.style.color = "#FF5252";
+                        msg.innerHTML = "🚫 Selection already recorded for this Enrollment.";
+                        enrollBtn.disabled = false;
+                        return; // Stop the flow here
+                    }
+
+                    // If not already done, proceed as normal
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = `Welcome, ${data.studentName}!`;
+                    msg.innerHTML = `✅ Welcome, ${data.studentName}!`;
                     
                     localStorage.setItem('enrollment_no', enrollNo);
                     localStorage.setItem('student_class', data.studentClass);
@@ -91,7 +99,7 @@
                     document.getElementById('stepTwoArea').style.display = "block";
                     document.getElementById('sendOtpBtn').disabled = false;
                     document.getElementById('enrollment_no').disabled = true;
-                    enrollBtn.style.display = "none"; // Hide button after success
+                    enrollBtn.style.display = "none"; 
                 } else {
                     msg.style.color = "#FF5252";
                     msg.innerHTML = data.message || "Enrollment not found.";
@@ -99,7 +107,7 @@
                 }
             } catch (e) { 
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Tunnel Error: Ensure ngrok is running on the desktop.";
+                msg.innerHTML = "Tunnel Error: Ensure ngrok is running.";
                 enrollBtn.disabled = false;
             }
         }
@@ -121,7 +129,7 @@
                 const res = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
                     headers: ngrokHeaders,
-                    body: JSON.stringify({ enrollNo: enrollment_no, email: email }) // Fixed variable name
+                    body: JSON.stringify({ enrollNo: enrollment_no, email: email })
                 });
                 const data = await res.json();
                 
@@ -147,7 +155,7 @@
                     sendBtn.innerHTML = "Send OTP to Email";
                 }
             } catch (e) { 
-                alert("Server error. Check ngrok/node terminal."); 
+                alert("Server error. Check terminal."); 
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = "Send OTP to Email";
             }
@@ -156,7 +164,7 @@
         function verifyOtp() {
             const input = document.getElementById('otpInput').value.trim();
             if (input == generatedOtp && generatedOtp !== null) {
-                const expiry = Date.now() + (5 * 60 * 1000); // 5 min session
+                const expiry = Date.now() + (5 * 60 * 1000); 
                 localStorage.setItem('session_expiry', expiry);
                 window.location.href = "games.html";
             } else { 
