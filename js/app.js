@@ -21,12 +21,12 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// 2. Email Setup (Exactly as you provided)
+// 2. Email Setup (Using your provided App Password)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'bomis.sports2026@gmail.com', 
-        pass: 'jeumkfeffaefxmmcc'       
+        pass: 'jeumkfeffaefxmmc'       
     }
 });
 
@@ -41,7 +41,8 @@ app.get('/api/check-status/:enrollNo', async (req, res) => {
             res.json({ 
                 verified: true, 
                 studentName: student.student_name,
-                studentClass: student.student_class 
+                studentClass: student.student_class,
+                alreadyDone: student.selection_status || false // Checks if already submitted
             });
         } else {
             res.json({ verified: false, message: "Enrollment not found." });
@@ -57,13 +58,10 @@ app.post('/api/verify-email', async (req, res) => {
     try {
         const { enrollNo, email } = req.body;
 
-        // SAFETY CHECK: Prevents server crash if data is missing from frontend
         if (!enrollNo || !email) {
-            console.log("⚠️ Warning: Received request with missing Enrollment or Email");
-            return res.status(400).json({ success: false, message: "Invalid Request. Missing data." });
+            return res.status(400).json({ success: false, message: "Missing enrollment or email." });
         }
 
-        // Search database using LOWER() for email to handle caps mismatch
         const result = await pool.query(
             'SELECT * FROM bomis_db WHERE enrollment_no = $1 AND LOWER(email) = LOWER($2)', 
             [enrollNo.toUpperCase(), email.trim()]
@@ -73,7 +71,6 @@ app.post('/api/verify-email', async (req, res) => {
             const student = result.rows[0]; 
             const otp = Math.floor(100000 + Math.random() * 900000);
 
-            // SEND MAIL
             await transporter.sendMail({
                 from: '"BOMIS Sports" <bomis.sports2026@gmail.com>', 
                 to: email.trim(),
@@ -82,19 +79,61 @@ app.post('/api/verify-email', async (req, res) => {
             });
 
             console.log(`✅ OTP ${otp} sent to ${email}`);
-            
-            res.json({ 
-                success: true, 
-                otp: otp, 
-                studentClass: student.student_class 
-            });
+            res.json({ success: true, otp: otp, studentClass: student.student_class });
         } else {
-            console.log(`❌ Email Mismatch for: ${email}`);
             res.json({ success: false, message: "Email mismatch." });
         }
     } catch (err) {
         console.error("❌ Server Error:", err.message);
-        res.status(500).json({ error: "Server Error - Check Terminal" });
+        res.status(500).json({ error: "Mail/Server Error" });
+    }
+});
+
+// 5. GET LIVE COUNTS (Fixed "No live count" issue)
+app.get('/api/live-counts/:studentClass', async (req, res) => {
+    try {
+        const { studentClass } = req.params;
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) FILTER (WHERE indoor_selection = 'Chess') as chess,
+                COUNT(*) FILTER (WHERE indoor_selection = 'Table Tennis') as tt,
+                COUNT(*) FILTER (WHERE outdoor_selection = 'Cricket') as cricket,
+                COUNT(*) FILTER (WHERE outdoor_selection = 'Football') as football
+            FROM bomis_db 
+            WHERE student_class = $1`, [studentClass]);
+        
+        // Ensure values are numbers
+        const counts = result.rows[0];
+        res.json({
+            chess: parseInt(counts.chess || 0),
+            tt: parseInt(counts.tt || 0),
+            cricket: parseInt(counts.cricket || 0),
+            football: parseInt(counts.football || 0)
+        });
+    } catch (err) {
+        console.error("❌ Stats Error:", err.message);
+        res.status(500).json({ error: "Failed to fetch counts" });
+    }
+});
+
+// 6. SUBMIT SELECTION (Fixed "Server error after submitting" issue)
+app.post('/api/submit-selection', async (req, res) => {
+    const { enrollNo, indoor, outdoor } = req.body;
+    try {
+        if (!enrollNo || !indoor || !outdoor) {
+            return res.status(400).json({ success: false, message: "Missing selection data." });
+        }
+
+        await pool.query(
+            'UPDATE bomis_db SET indoor_selection = $1, outdoor_selection = $2, selection_status = TRUE WHERE enrollment_no = $3',
+            [indoor, outdoor, enrollNo.toUpperCase()]
+        );
+        
+        console.log(`🎯 Selection saved for ${enrollNo}: ${indoor} & ${outdoor}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Submission Error:", err.message);
+        res.status(500).json({ success: false, message: "Database update failed." });
     }
 });
 
@@ -102,10 +141,8 @@ app.listen(3000, () => { console.log('✅ Server running on 3000'); });
 
 pool.query('SELECT NOW()', (err) => { 
     if (err) {
-        console.log('❌ DB Connection Failed! Please check your .env file.');
+        console.log('❌ DB Connection Failed!');
     } else {
         console.log('✅ Successfully Connected to Supabase!'); 
     }
 });
-
-
