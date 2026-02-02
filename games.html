@@ -7,8 +7,18 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; margin: 0; padding: 0; }
         
-        /* THE HEADER YOU ASKED FOR */
-        .header { background: #FF8C00; color: white; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .header { 
+            background: #FF8C00; 
+            color: white; 
+            padding: 15px 20px; 
+            text-align: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .header-title { font-size: 22px; font-weight: bold; }
+        #timer { font-size: 18px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; }
         
         .container { display: flex; max-width: 1200px; margin: 20px auto; gap: 20px; padding: 0 15px; }
         
@@ -22,19 +32,35 @@
         .progress-bar { width: 100%; background: #444; border-radius: 10px; height: 12px; margin: 10px 0 20px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: #4CAF50; transition: width 0.5s ease-in-out; }
         
-        h2 { color: #FF8C00; }
-        .game-option { margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
-        button { background: #FF8C00; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
-        button:hover { background: #e07b00; }
+        h2 { color: #FF8C00; margin-top: 0; }
+        h3 { margin-top: 25px; border-left: 4px solid #FF8C00; padding-left: 10px; }
+        
+        .game-option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+        .game-option:hover { background: #fff9f0; border-color: #FF8C00; }
+        .game-option input { margin-right: 15px; transform: scale(1.2); }
+        .game-option label { cursor: pointer; width: 100%; font-weight: 500; }
+
+        button { background: #FF8C00; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; margin-top: 30px; transition: 0.3s; }
+        button:hover { background: #e07b00; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .header { flex-direction: column; gap: 10px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">BOMIS SPORTS SELECTION 2026-27</div>
+    <div class="header">
+        <div class="header-title">BOMIS SPORTS SELECTION 2026-27</div>
+        <div id="timer">Time Left: 2:00</div>
+    </div>
 
     <div class="container">
         <div class="selection-box" id="main-ui">
             <h2>Select Your Games</h2>
+            <p style="color: #666;">Choose one game from each category. Limits apply per class.</p>
             
             <h3>Indoor Games</h3>
             <div class="game-option"><input type="radio" name="indoor" value="Chess" id="c1"> <label for="c1">Chess</label></div>
@@ -44,24 +70,55 @@
             <div class="game-option"><input type="radio" name="outdoor" value="Cricket" id="o1"> <label for="o1">Cricket</label></div>
             <div class="game-option"><input type="radio" name="outdoor" value="Football" id="o2"> <label for="o2">Football</label></div>
 
-            <button onclick="submitSelection()">SUBMIT SELECTION</button>
+            <button id="submitBtn" onclick="submitSelection()">SUBMIT SELECTION</button>
         </div>
 
         <div class="sidebar">
-            <h3 style="border-bottom: 1px solid #555; padding-bottom: 10px;">Live Availability</h3>
+            <h3 style="border-bottom: 1px solid #555; padding-bottom: 10px; color: white; border-left: none;">Class Availability</h3>
             <div id="stats-container">
-                <p>Connecting to live server...</p>
+                <p>Loading class data...</p>
             </div>
+            <p style="font-size: 12px; color: #aaa; margin-top: 20px;">* Counts are specific to your grade level.</p>
         </div>
     </div>
 
     <script>
         const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+        const studentClass = localStorage.getItem('student_class');
+        const enrollment = localStorage.getItem('enrollment_no');
 
+        // Security: Redirect if no session
+        if (!enrollment || !studentClass) {
+            window.location.href = "index.html";
+        }
+
+        // 1. SESSION TIMER LOGIC
+        function startTimer() {
+            const timerDisplay = document.getElementById('timer');
+            const interval = setInterval(() => {
+                const expiry = localStorage.getItem('session_expiry');
+                const now = Date.now();
+                const timeLeft = expiry - now;
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    localStorage.clear();
+                    alert("Session Expired (2 Min Limit). Please login again.");
+                    window.location.href = "index.html";
+                    return;
+                }
+
+                const mins = Math.floor(timeLeft / 60000);
+                const secs = Math.floor((timeLeft % 60000) / 1000);
+                timerDisplay.innerHTML = `Time Left: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                if (timeLeft < 30000) timerDisplay.style.color = "#FFD700"; // Warn at 30s
+            }, 1000);
+        }
+
+        // 2. LIVE COUNTS (CLASS SPECIFIC)
         async function updateLiveCounts() {
             try {
-                const res = await fetch(`${BACKEND_URL}/api/live-counts`);
-                if (!res.ok) throw new Error();
+                const res = await fetch(`${BACKEND_URL}/api/live-counts/${studentClass}`);
                 const counts = await res.json();
                 
                 const getPct = (val) => Math.min((val / 30) * 100, 100);
@@ -80,25 +137,31 @@
                     <div class="progress-bar"><div class="progress-fill" style="width: ${getPct(counts.football)}%"></div></div>
                 `;
                 document.getElementById('stats-container').innerHTML = statsHtml;
+
+                // Auto-disable radio buttons if a game is full (30 limit)
+                if (counts.chess >= 30) document.getElementById('c1').disabled = true;
+                if (counts.tt >= 30) document.getElementById('c2').disabled = true;
+                if (counts.cricket >= 30) document.getElementById('o1').disabled = true;
+                if (counts.football >= 30) document.getElementById('o2').disabled = true;
+
             } catch (e) {
-                document.getElementById('stats-container').innerHTML = "<p style='color:#FF8C00;'>Waking up live server... please wait.</p>";
-                setTimeout(updateLiveCounts, 3000);
+                document.getElementById('stats-container').innerHTML = "<p style='color:#FF8C00;'>Updating availability...</p>";
             }
         }
 
+        // 3. SUBMIT SELECTION
         async function submitSelection() {
             const indoor = document.querySelector('input[name="indoor"]:checked');
             const outdoor = document.querySelector('input[name="outdoor"]:checked');
-            const enrollment = localStorage.getItem('enrollment_no');
 
             if (!indoor || !outdoor) {
                 alert("Please select both an Indoor and Outdoor game!");
                 return;
             }
 
-            const mainUi = document.getElementById('main-ui');
-            const originalContent = mainUi.innerHTML;
-            mainUi.innerHTML = "<h3 style='text-align:center;'>Processing...</h3>";
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "Processing Selection...";
 
             try {
                 const res = await fetch(`${BACKEND_URL}/api/save-selection`, {
@@ -114,24 +177,27 @@
                 const result = await res.json();
                 if (result.success) {
                     localStorage.clear();
-                    mainUi.innerHTML = `
-                        <div style="text-align:center; padding:20px;">
-                            <h2 style="color:#4CAF50;">Recorded! ✅</h2>
-                            <p>Thank you for your selection for the 2026-27 session.</p>
-                            <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="margin-top:20px;">Finish</button>
+                    document.getElementById('main-ui').innerHTML = `
+                        <div style="text-align:center; padding:40px;">
+                            <h2 style="color:#4CAF50; font-size: 30px;">Success! ✅</h2>
+                            <p style="font-size: 18px; color: #555;">Your sports selection for 2026-27 has been recorded.</p>
+                            <button onclick="window.location.href='https://bomis-lbnagar.com/'" style="width: 200px;">Back to Home</button>
                         </div>`;
-                    updateLiveCounts();
                 } else {
-                    alert(result.message || "Failed to save.");
-                    mainUi.innerHTML = originalContent;
+                    alert(result.message || "Game full! Please refresh and try another.");
+                    location.reload(); 
                 }
             } catch (e) {
-                alert("Connection lost. Try again.");
-                mainUi.innerHTML = originalContent;
+                alert("Server busy. Please try again in a moment.");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "SUBMIT SELECTION";
             }
         }
 
+        // INITIALIZE PAGE
+        startTimer();
         updateLiveCounts();
+        setInterval(updateLiveCounts, 10000); // Auto-refresh counts every 10 seconds
     </script>
 </body>
 </html>
