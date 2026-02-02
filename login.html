@@ -55,7 +55,6 @@
     <script>
         const BACKEND_URL = "https://arlean-oleoyl-obeisantly.ngrok-free.dev";
         let generatedOtp = null;
-        let otpExpiryTimer = null;
 
         const ngrokHeaders = {
             "Content-Type": "application/json",
@@ -63,7 +62,8 @@
         };
 
         async function verifyEnrollment() {
-            const enrollNo = document.getElementById('enrollment_no').value.trim().toUpperCase();
+            const enrollInput = document.getElementById('enrollment_no');
+            const enrollNo = enrollInput.value.trim().toUpperCase();
             const msg = document.getElementById('statusMessage');
             const enrollBtn = document.getElementById('verifyEnrollBtn');
             const stepTwo = document.getElementById('stepTwoArea');
@@ -72,7 +72,7 @@
             
             enrollBtn.disabled = true;
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Verifying...";
+            msg.innerHTML = "Checking status...";
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`, {
@@ -81,25 +81,25 @@
                 const data = await response.json();
                 
                 if (data.verified) {
-                    // 1. CHECK IF ALREADY DONE
+                    // BLOCK SECOND SUBMISSION
                     if (data.alreadyDone === true) {
                         msg.style.color = "#FF5252";
-                        msg.innerHTML = "🚫 Selection already recorded for this Enrollment.";
-                        stepTwo.style.display = "none"; // Ensure email section is hidden
+                        msg.innerHTML = "🚫 Selection already recorded for " + (data.studentName || enrollNo);
+                        stepTwo.style.display = "none"; 
                         enrollBtn.disabled = false;
-                        return;
+                        return; // EXIT FUNCTION
                     }
 
-                    // 2. IF NOT DONE, SHOW NAME AND PROCEED
+                    // ALLOW PROCEEDING
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = `✅ Welcome, ${data.studentName}!`; // Fixed the name display
+                    msg.innerHTML = `✅ Welcome, ${data.studentName}!`; 
                     
                     localStorage.setItem('enrollment_no', enrollNo);
                     localStorage.setItem('student_class', data.studentClass);
 
                     stepTwo.style.display = "block";
                     document.getElementById('sendOtpBtn').disabled = false;
-                    document.getElementById('enrollment_no').disabled = true;
+                    enrollInput.disabled = true;
                     enrollBtn.style.display = "none"; 
                 } else {
                     msg.style.color = "#FF5252";
@@ -108,13 +108,14 @@
                 }
             } catch (e) { 
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Connection Error. Check server/ngrok.";
+                msg.innerHTML = "Server connection error.";
                 enrollBtn.disabled = false;
             }
         }
 
         async function sendOtp() {
-            const email = document.getElementById('email').value.trim();
+            const emailField = document.getElementById('email');
+            const email = emailField.value.trim();
             const enrollment_no = localStorage.getItem('enrollment_no');
             const sendBtn = document.getElementById('sendOtpBtn');
             const msg = document.getElementById('statusMessage');
@@ -137,7 +138,8 @@
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = "OTP Sent to " + email;
                     document.getElementById('otpSection').style.display = "block";
-                    document.getElementById('email').disabled = true;
+                    emailField.disabled = true;
+                    sendBtn.innerHTML = "OTP Sent";
                 } else { 
                     alert(data.message || "Email mismatch."); 
                     sendBtn.disabled = false;
