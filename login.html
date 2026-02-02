@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOMIS Sports Selection</title>
+    <title>BOMIS Sports Selection 2026-27</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; height: 100vh; background-color: #fff; overflow: hidden; }
@@ -54,9 +54,16 @@
     </div>
 
     <script>
-        const BACKEND_URL = "https://bomis-sports-backend.onrender.com";
+        // Updated to your permanent ngrok URL
+        const BACKEND_URL = "https://arlean-oleoyl-obeisantly.ngrok-free.dev";
         let generatedOtp = null;
         let otpExpiryTimer = null;
+
+        // Essential for ngrok: tells the tunnel to skip the manual "Visit Site" warning
+        const ngrokHeaders = {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+        };
 
         async function verifyEnrollment() {
             const enrollNo = document.getElementById('enrollment_no').value.trim().toUpperCase();
@@ -67,10 +74,12 @@
             
             enrollBtn.disabled = true;
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Checking database...";
+            msg.innerHTML = "Accessing secure tunnel...";
             
             try {
-                const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`);
+                const response = await fetch(`${BACKEND_URL}/api/check-status/${enrollNo}`, {
+                    headers: ngrokHeaders
+                });
                 const data = await response.json();
                 
                 if (data.verified) {
@@ -84,7 +93,6 @@
                     msg.style.color = "#4CAF50";
                     msg.innerHTML = `Welcome, ${data.studentName}!`;
                     
-                    // SAVE CLASS AND ENROLLMENT FOR LATER
                     localStorage.setItem('enrollment_no', enrollNo);
                     localStorage.setItem('student_class', data.studentClass);
 
@@ -98,7 +106,7 @@
                 }
             } catch (e) { 
                 msg.style.color = "#FF5252";
-                msg.innerHTML = "Server connection error.";
+                msg.innerHTML = "Tunnel Error: Ensure ngrok is running on the desktop.";
                 enrollBtn.disabled = false;
             }
         }
@@ -112,28 +120,27 @@
             if(!email) { alert("Please enter email"); return; }
 
             sendBtn.disabled = true;
-            sendBtn.innerHTML = "Sending Email...";
+            sendBtn.innerHTML = "Processing...";
             msg.style.color = "#FF9100";
-            msg.innerHTML = "Sending OTP to your email...";
+            msg.innerHTML = "Requesting OTP from desktop server...";
 
             try {
                 const res = await fetch(`${BACKEND_URL}/api/verify-email`, {
                     method: 'POST',
-                    headers: { "Content-Type": "application/json" },
+                    headers: ngrokHeaders,
                     body: JSON.stringify({ enrollment_no, email })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    generatedOtp = data.otp; // Received from Nodemailer
+                    generatedOtp = data.otp;
                     msg.style.color = "#4CAF50";
-                    msg.innerHTML = "OTP Sent! Please check your inbox (and spam).";
+                    msg.innerHTML = "OTP Sent! Check your inbox (and spam).";
                     
                     document.getElementById('otpSection').style.display = "block";
                     document.getElementById('email').disabled = true;
-                    sendBtn.innerHTML = "OTP Sent Successfully";
+                    sendBtn.innerHTML = "OTP Sent";
 
-                    // Start 2-minute timer
                     clearTimeout(otpExpiryTimer);
                     otpExpiryTimer = setTimeout(() => {
                         generatedOtp = null;
@@ -142,12 +149,12 @@
                     }, 120000);
 
                 } else { 
-                    alert(data.message || "Email verification failed."); 
+                    alert(data.message || "Verification failed."); 
                     sendBtn.disabled = false;
                     sendBtn.innerHTML = "Verify Email";
                 }
             } catch (e) { 
-                alert("Error connecting to server."); 
+                alert("Could not reach the desktop server. Check ngrok status."); 
                 sendBtn.disabled = false;
             }
         }
@@ -155,7 +162,6 @@
         function verifyOtp() {
             const input = document.getElementById('otpInput').value.trim();
             if (input == generatedOtp && generatedOtp !== null) {
-                // Set session expiry for the next page
                 const expiry = Date.now() + (2 * 60 * 1000);
                 localStorage.setItem('session_expiry', expiry);
                 window.location.href = "games.html";
