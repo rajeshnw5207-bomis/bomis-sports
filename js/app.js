@@ -30,7 +30,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// 1. Verify Enrollment - THIS IS NOW THE ONLY TRAFFIC FILTER
+// 1. Verify Enrollment (The Primary Gatekeeper)
 app.get('/api/check-status/:enrollNo', async (req, res) => {
     try {
         const { enrollNo } = req.params;
@@ -39,9 +39,9 @@ app.get('/api/check-status/:enrollNo', async (req, res) => {
         if (result.rows.length > 0) {
             const student = result.rows[0];
             
-            // Check if selection_status is true
+            // If alreadyDone is TRUE, we block them immediately at login
             if (student.selection_status === true) {
-                console.log(`🚫 Traffic Filtered: ${enrollNo} already submitted.`);
+                console.log(`🚫 Blocked Login: ${enrollNo} has already submitted.`);
                 return res.json({ 
                     verified: true, 
                     alreadyDone: true, 
@@ -49,7 +49,7 @@ app.get('/api/check-status/:enrollNo', async (req, res) => {
                 });
             }
 
-            // If not submitted, allow them to proceed
+            // If not submitted, proceed normally
             res.json({ 
                 verified: true, 
                 alreadyDone: false,
@@ -94,7 +94,7 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// 3. Live Counts for games.html
+// 3. Live Counts
 app.get('/api/live-counts/:studentClass', async (req, res) => {
     try {
         const { studentClass } = req.params;
@@ -118,10 +118,17 @@ app.get('/api/live-counts/:studentClass', async (req, res) => {
     }
 });
 
-// 4. Submit Selection (Cleaned up - duplicate check handled at login)
+// 4. Submit Selection (Safety Lock Added)
 app.post('/api/submit-selection', async (req, res) => {
     const { enrollNo, indoor, outdoor } = req.body;
     try {
+        // FINAL CHECK: Ensure they didn't somehow bypass the login filter
+        const check = await pool.query('SELECT selection_status FROM bomis_db WHERE enrollment_no = $1', [enrollNo.toUpperCase()]);
+        
+        if (check.rows.length > 0 && check.rows[0].selection_status === true) {
+            return res.status(400).json({ success: false, message: "Selection already recorded." });
+        }
+
         await pool.query(
             'UPDATE bomis_db SET indoor_selection = $1, outdoor_selection = $2, selection_status = TRUE WHERE enrollment_no = $3',
             [indoor, outdoor, enrollNo.toUpperCase()]
@@ -136,7 +143,4 @@ app.post('/api/submit-selection', async (req, res) => {
 
 app.listen(3000, () => { 
     console.log('✅ Server running on 3000');
-    pool.query('SELECT NOW()', (err) => {
-        if (!err) console.log('✅ Successfully Connected to Supabase!');
-    });
 });
