@@ -19,11 +19,19 @@ const pool = new Pool({
 
 // Gmail Transporter for OTPs
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465, // Changed from default
+    secure: true, // true for 465, false for other ports
     auth: {
-        user: 'bomis.sports2026@gmail.com', // UPDATE THIS
-        pass: 'jeum kfef faef xmmc'    // UPDATE YOUR APP PASSWORD HERE
-    }
+        user: 'bomis.sports2026@gmail.com', 
+        pass: 'jeum kfef faef xmmc' // Your 16-digit App Password
+    },
+    tls: {
+        // This is critical: it prevents the connection from dropping 
+        // if Render and Gmail have a certificate mismatch
+        rejectUnauthorized: false 
+    },
+    connectionTimeout: 10000 // 10 seconds
 });
 
 // 1. Enrollment Check (Open for all classes)
@@ -142,3 +150,4 @@ app.post('/api/save-selection', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server live on ${PORT}`));
+
